@@ -18,7 +18,7 @@ public class UsuarioController {
     @GetMapping("/api/usuarios/me")
     public UsuarioResponse me() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        // No Resource Server, getName() retorna o campo "sub" do JWT validado.
+        // O filtro define o principal como o email do usuario encontrado no banco.
         String email = authentication.getName();
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(
