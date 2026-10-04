@@ -1,81 +1,102 @@
-# App_Template_01_Restaurante_Backend
+# API do Restaurante
 
-## Swagger / OpenAPI
+Spring Boot 4.1, Java 25 e springdoc-openapi 3.1.1.
 
-Requisitos: Java 25 e as dependências baixadas pelo Maven Wrapper.
-O projeto usa Spring Boot 4.1 e `springdoc-openapi-starter-webmvc-ui` 3.1.1.
+## Executar localmente
 
-Na pasta `application`, execute no Windows:
+Na pasta `application`, use Maven instalado (`mvn`) ou o Wrapper (`.\mvnw.cmd`
+no Windows, `bash mvnw` no Linux/macOS).
 
-```powershell
-.\mvnw.cmd spring-boot:run
-```
-
-A inicialização normal exige configurar o MySQL (`spring.datasource.url`,
-`spring.datasource.username` e `spring.datasource.password`). Como esta branch
-ainda não contém entidades ou endpoints de negócio, é possível visualizar apenas
-a documentação sem banco de dados:
-
-```powershell
-.\mvnw.cmd spring-boot:run "-Dspring-boot.run.arguments=--spring.autoconfigure.exclude=org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration"
-```
-
-- Swagger UI: http://localhost:8080/swagger-ui.html ou http://localhost:8080/swagger-ui/index.html
-- OpenAPI JSON: http://localhost:8080/v3/api-docs
-- OpenAPI YAML: http://localhost:8080/v3/api-docs.yaml
-
-A documentação é pública. Os demais caminhos continuam exigindo autenticação.
-Em **Authorize**, use HTTP Basic com as credenciais do Spring Security. Sem uma
-configuração própria de usuários, o usuário é `user` e a senha temporária aparece
-no log de inicialização. Não há autenticação JWT nesta branch.
-
-A proteção CSRF continua habilitada: futuras operações POST, PUT, PATCH e DELETE
-também precisarão de um token CSRF válido, além da autenticação.
-
-### Documentação dos endpoints
-
-Esta branch ainda não possui controllers de negócio; por isso, a UI inicialmente
-não exibe operações. Controllers criados dentro do pacote
-`com.app.template._1.restaurante.srv.application` (ou subpacotes) serão listados
-automaticamente. O exemplo abaixo é apenas uma referência para um futuro controller:
-
-```java
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.media.Content;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-
-@Operation(summary = "Buscar restaurante", description = "Consulta um restaurante pelo identificador.")
-@ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Restaurante encontrado"),
-    @ApiResponse(responseCode = "401", description = "Autenticação necessária", content = @Content),
-    @ApiResponse(responseCode = "404", description = "Restaurante não encontrado", content = @Content)
-})
-@GetMapping("/restaurantes/{id}")
-public RestauranteResponse buscar(
-        @Parameter(description = "Identificador do restaurante", example = "1")
-        @PathVariable Long id) {
-    return restauranteService.buscar(id);
-}
-```
-
-`RestauranteResponse` e `restauranteService` ilustram componentes futuros.
-`@SecurityScheme` está definido em `OpenApiConfig`, e a exigência de HTTP Basic
-é documentada globalmente. Para uma operação pública, use
-`@SecurityRequirements` (de `io.swagger.v3.oas.annotations.security`) sem valores
-no método e libere também o caminho em `SecurityConfig`;
-as annotations OpenAPI não alteram as regras reais de acesso.
-
-### Validação
+Para testar Swagger e autenticação sem configurar MySQL:
 
 ```powershell
 cd application
-.\mvnw.cmd test
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
 ```
 
-Os testes desabilitam apenas a configuração automática do banco, verificam o
-acesso público à UI e ao JSON, a documentação de um controller exclusivo dos
-testes e a exigência de autenticação nos endpoints da aplicação.
+O perfil `local` desativa a configuração automática do banco. Sem esse perfil,
+configure `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` e
+`SPRING_DATASOURCE_PASSWORD` para o seu MySQL.
+
+- [Swagger UI](http://localhost:8080/swagger-ui.html)
+- [Swagger UI — endereço direto](http://localhost:8080/swagger-ui/index.html)
+- [OpenAPI JSON](http://localhost:8080/v3/api-docs)
+- [OpenAPI YAML](http://localhost:8080/v3/api-docs.yaml)
+
+## Autenticação e exemplos no Swagger
+
+Esta etapa usa o usuário **em memória** fornecido pelo Spring Security. Não há
+cadastro persistente ou emissão de JWT. Por padrão, o nome é `user` e a senha
+temporária é mostrada no log de inicialização. Para configurar credenciais,
+defina `SPRING_SECURITY_USER_NAME` e `SPRING_SECURITY_USER_PASSWORD` no ambiente
+antes de iniciar. Não salve senhas no repositório.
+
+1. Abra o Swagger e execute `GET /api/auth/csrf` em **Try it out**.
+2. Copie o campo `token` da resposta.
+3. Em `POST /api/auth/login`, cole esse valor no parâmetro `X-CSRF-TOKEN` e
+   preencha o JSON com o usuário e a senha da aplicação:
+
+   ```json
+   { "username": "user", "password": "substitua-pela-sua-senha" }
+   ```
+
+4. Execute o login. A resposta `200` retorna o usuário e suas permissões; o
+   navegador recebe o cookie de sessão `JSESSIONID` automaticamente.
+5. Execute `GET /api/usuarios/me` no mesmo navegador. Exemplo de resposta:
+
+   ```json
+   { "username": "user", "authorities": ["FACTOR_PASSWORD"] }
+   ```
+
+O esquema `sessionAuth` documenta o cookie em `@SecurityScheme`. Não é necessário
+preencher **Authorize**: o login cria a sessão, e o navegador envia o cookie nas
+requisições seguintes. Os endpoints de login e consulta do usuário têm
+`@Operation`, exemplos e respostas documentadas. Credenciais incorretas retornam
+`401`; campos vazios retornam `400` quando o token CSRF é válido; token CSRF
+ausente ou inválido retorna `403`; consulta sem sessão retorna `401`.
+
+As permissões dependem da configuração do usuário: `SPRING_SECURITY_USER_ROLES`
+permite definir papéis como `USER` (exposto como `ROLE_USER`). O Spring Security
+também identifica a autenticação por senha com `FACTOR_PASSWORD`.
+
+Clientes HTTP devem guardar os cookies recebidos e reenviá-los nas próximas
+requisições. A proteção CSRF permanece ativa. Após login ou logout, obtenha um
+novo token em `/api/auth/csrf` antes de fazer outra operação de escrita.
+O Spring Security também atende `POST /api/auth/logout`: envie o token atualizado
+em `X-CSRF-TOKEN` e o cookie da sessão; a resposta é `204`.
+
+## Compilação, testes e linting
+
+Execute a partir de `application`:
+
+```powershell
+.\mvnw.cmd clean compile
+.\mvnw.cmd test
+.\mvnw.cmd checkstyle:check
+.\mvnw.cmd clean verify
+```
+
+Os mesmos objetivos funcionam com `mvn`. O plugin Checkstyle 3.6.0 roda na fase
+`validate`, antes da compilação e dos testes, e falha o build em qualquer violação.
+As regras em `application/checkstyle.xml` verificam nomes, imports, chaves,
+comprimento de linha e erros como statements vazios e contratos equals/hashCode,
+incluindo código de testes.
+
+Os testes usam H2 somente no escopo de teste, com o contexto de persistência
+habilitado; nenhum MySQL externo é necessário. Eles verificam inicialização,
+Swagger público, documentação dos endpoints reais, credenciais válidas e
+inválidas, validação do JSON, sessão, rotação do identificador da sessão, CSRF
+e logout. O perfil `local` não é usado pelos testes.
+
+## Pipeline
+
+`.github/workflows/build.yml` executa `clean verify` com Java 25 em pushes e
+pull requests no GitHub. Essa execução reúne Checkstyle, compilação, testes e
+empacotamento. O pipeline remoto começará a rodar quando as alterações forem
+enviadas ao GitHub.
+
+## Organização
+
+O pacote raiz é `com.app.template._1.restaurante.srv.application`, com subpacotes
+`auth`, `usuario` e `config`. A classe `Application` fica no diretório correspondente
+ao pacote, para que o component scan encontre os controllers e configurações.
