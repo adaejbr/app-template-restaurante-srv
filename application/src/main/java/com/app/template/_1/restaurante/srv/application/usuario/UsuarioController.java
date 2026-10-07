@@ -1,31 +1,28 @@
 package com.app.template._1.restaurante.srv.application.usuario;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
-@Tag(name = "Usuários")
 public class UsuarioController {
+    private final UsuarioRepository usuarioRepository;
 
-    @Operation(summary = "Consultar usuário autenticado",
-            description = "Retorna o nome e as permissões do usuário associado à sessão do login.")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Usuário autenticado",
-                content = @Content(mediaType = "application/json",
-                        schema = @Schema(implementation = UsuarioResponse.class),
-                        examples = @ExampleObject(value = "{\"username\":\"user\",\"authorities\":[\"ROLE_USER\"]}"))),
-        @ApiResponse(responseCode = "401", description = "Sessão ausente ou expirada", content = @Content)
-    })
+    public UsuarioController(UsuarioRepository usuarioRepository) {
+        this.usuarioRepository = usuarioRepository;
+    }
+
     @GetMapping("/api/usuarios/me")
-    public UsuarioResponse me(Authentication authentication) {
-        return UsuarioResponse.from(authentication);
+    public UsuarioResponse me() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        // O filtro define o principal como o email do usuario encontrado no banco.
+        String email = authentication.getName();
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Usuario autenticado nao encontrado"));
+        return UsuarioResponse.from(usuario);
     }
 }
