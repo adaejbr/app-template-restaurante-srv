@@ -26,12 +26,10 @@ public class Funcionario {
     private String cargo;
     private Boolean ativo;
 
-    @Todo
-    /* ------------------------------------------------- 
-    
-    ESSA ENTIDADE FOI CRIADA PARA IMPLEMENTAR O MAPPER, 
-    QUANDO FOR FEITA A TASK EM QUE DEVERIA SER CRIADO O FUNCIONÁRIO,
-    DEVE-SE OBRIGATORIAMENTE ATUALIZAR O MAPPER PARA QUE O LOGIN FUNCIONE CORRETAMENTE.
-    
-       ------------------------------------------------- */
+    /* 
+        TODO: Implementar
+        ESSA ENTIDADE FOI CRIADA PARA IMPLEMENTAR O MAPPER, 
+        QUANDO FOR FEITA A TASK EM QUE DEVERIA SER CRIADO O FUNCIONÁRIO, 
+        DEVE-SE OBRIGATORIAMENTE ATUALIZAR O MAPPER PARA QUE O LOGIN FUNCIONE CORRETAMENTE. 
+    */
 }

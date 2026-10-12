@@ -39,7 +39,11 @@ public class JwtUtils {
                 .build()
                 .parseClaimsJws(authToken);
             return true;
-        } catch (Exception e) {
+        } catch (io.jsonwebtoken.security.SignatureException | 
+                io.jsonwebtoken.MalformedJwtException | 
+                io.jsonwebtoken.ExpiredJwtException | 
+                io.jsonwebtoken.UnsupportedJwtException | 
+                IllegalArgumentException e) {
             return false;
         }
     }
