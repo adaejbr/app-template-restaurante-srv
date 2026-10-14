@@ -22,7 +22,9 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.setStatus(expired ? 403 : 401);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-        if (!expired) response.setHeader("WWW-Authenticate", "Bearer");
+        if (!expired) {
+            response.setHeader("WWW-Authenticate", "Bearer");
+        }
         response.getWriter().write(expired
                 ? "{\"status\":403,\"erro\":\"Token expirado\"}"
                 : "{\"status\":401,\"erro\":\"Token ausente ou invalido\"}");

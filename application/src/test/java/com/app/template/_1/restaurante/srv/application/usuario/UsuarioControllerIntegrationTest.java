@@ -17,13 +17,17 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
-import com.nimbusds.jose.*;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.MACSigner;
-import com.nimbusds.jwt.*;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -187,13 +191,19 @@ class UsuarioControllerIntegrationTest {
     private void chamada(String token, int expectedStatus) throws Exception {
         mvc.perform(get("/api/usuarios/me").header("Authorization", "Bearer " + token))
                 .andExpect(status().is(expectedStatus));
-        if (expectedStatus == 401 || expectedStatus == 403) verify(controller, never()).me();
+        if (expectedStatus == 401 || expectedStatus == 403) {
+            verify(controller, never()).me();
+        }
     }
     private String token(String email, Long segundos, String chave, Instant notBefore) throws Exception {
         JWTClaimsSet.Builder claims = new JWTClaimsSet.Builder().subject(email).claim("cargo", "ADMIN")
                 .issueTime(Date.from(Instant.now().minusSeconds(7200)));
-        if (segundos != null) claims.expirationTime(Date.from(Instant.now().plusSeconds(segundos)));
-        if (notBefore != null) claims.notBeforeTime(Date.from(notBefore));
+        if (segundos != null) {
+            claims.expirationTime(Date.from(Instant.now().plusSeconds(segundos)));
+        }
+        if (notBefore != null) {
+            claims.notBeforeTime(Date.from(notBefore));
+        }
         SignedJWT jwt = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claims.build());
         jwt.sign(new MACSigner(Base64.getDecoder().decode(chave)));
         return jwt.serialize();
