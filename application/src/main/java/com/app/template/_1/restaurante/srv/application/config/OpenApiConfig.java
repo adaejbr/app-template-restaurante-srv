@@ -1,7 +1,6 @@
 package com.app.template._1.restaurante.srv.application.config;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -11,13 +10,10 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @OpenAPIDefinition(
         info = @Info(title = "API do Restaurante", version = "v1",
-                description = "Autenticação por sessão. Obtenha o token em GET /api/auth/csrf, "
-                        + "envie-o no login e consulte GET /api/usuarios/me."),
-        security = @SecurityRequirement(name = "sessionAuth")
+                description = "Autentique-se em POST /api/auth/login e envie o JWT como Bearer token."),
+        security = @SecurityRequirement(name = "bearerAuth")
 )
-@SecurityScheme(name = "sessionAuth", type = SecuritySchemeType.APIKEY,
-        in = SecuritySchemeIn.COOKIE, paramName = "JSESSIONID",
-        description = "Cookie criado pelo login. No Swagger, execute o login; "
-                + "o navegador envia o cookie automaticamente nas próximas requisições.")
+@SecurityScheme(name = "bearerAuth", type = SecuritySchemeType.HTTP,
+        scheme = "bearer", bearerFormat = "JWT")
 public class OpenApiConfig {
 }

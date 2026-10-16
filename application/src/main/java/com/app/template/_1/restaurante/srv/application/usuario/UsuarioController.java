@@ -12,13 +12,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class UsuarioController {
     @GetMapping("/api/usuarios/me")
-    @Operation(summary = "Consultar usuário autenticado", responses = {
-        @ApiResponse(responseCode = "200", description = "Identidade da sessão autenticada",
+    @Operation(summary = "Consultar usuário autenticado pelo JWT", responses = {
+        @ApiResponse(responseCode = "200", description = "Identidade do funcionário autenticado",
                 content = @Content(mediaType = "application/json",
                         examples = @ExampleObject(value =
                                 "{\"username\":\"user\",\"authorities\":[\"ROLE_USER\"]}"))),
-        @ApiResponse(responseCode = "401", description = "Sessão ausente ou não autenticada",
-                content = @Content)
+        @ApiResponse(responseCode = "401", description = "Bearer token ausente ou inválido", content = @Content)
     })
     public UsuarioResponse me() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

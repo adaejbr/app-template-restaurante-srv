@@ -1,41 +1,77 @@
-# Autenticação por sessão
+# Autenticação JWT
 
-A API usa sessão HTTP (`JSESSIONID`) para autenticação e proteção CSRF para requisições que alteram estado. O fluxo é implementado em `AuthController` e na configuração de segurança do módulo `application`.
+A API autentica funcionários por e-mail e senha em `POST /api/auth/login` e emite um token JWT assinado com HS256. O Spring Security OAuth2 Resource Server valida esse token nas rotas protegidas.
 
-## Fluxo
+## Login
 
-1. Faça `GET /api/auth/csrf`. A resposta contém `headerName` e `token`; mantenha também o cookie de sessão recebido.
-2. Envie `POST /api/auth/login` com o cookie, o token no cabeçalho indicado e as credenciais JSON:
+Envie:
 
-   ```json
-   {"username":"user","password":"senha"}
-   ```
+```json
+{
+  "email": "gerente@restaurante.com",
+  "senha": "admin123"
+}
+```
 
-3. O login retorna `username` e `authorities` e gira o identificador da sessão. O token CSRF anterior deixa de ser válido.
-4. Use a sessão para chamar `GET /api/usuarios/me`. Para logout, obtenha um token CSRF atualizado e envie-o em `POST /api/auth/logout`.
+Resposta `200`:
 
-O login usa o `AuthenticationManager` configurado pelo Spring Security. Em desenvolvimento/testes, as propriedades `spring.security.user.name`, `spring.security.user.password` e `spring.security.user.roles` configuram o usuário padrão; em produção, configure um provedor de autenticação apropriado e credenciais fora do repositório.
+```json
+{
+  "token": "<JWT>",
+  "userId": 1,
+  "nome": "Gerente Padrao",
+  "cargo": "GERENTE"
+}
+```
 
-## Proteção e respostas
+O `userId` e o nome vêm do funcionário e do perfil associado. O cargo é o primeiro cargo associado ao funcionário com status `ATIVO`; sem cargo ativo, a resposta contém `null` nesse campo. Credenciais inválidas ou funcionário inativo retornam `401`; e-mail/senha ausentes ou malformados retornam `400`.
 
-- `GET /api/auth/csrf`, login e documentação OpenAPI/Swagger são públicos. As demais rotas exigem sessão autenticada.
-- CSRF permanece habilitado para métodos mutáveis; token ausente ou inválido retorna `403`.
-- Sessão ausente ou credenciais inválidas retornam `401`.
-- O logout invalida a sessão e retorna `204`.
-- `/api/usuarios/me` retorna somente `username` e `authorities`; não expõe senha.
-- Cabeçalhos `Authorization: Bearer` não autenticam chamadas. Não há configuração JWT ativa.
+Para chamadas autenticadas, envie o token no cabeçalho:
 
-## CORS e frontend
+```http
+Authorization: Bearer <JWT>
+```
 
-O CORS permite a origem `http://localhost:4200`, os métodos `GET`, `POST`, `PUT`, `PATCH`, `DELETE` e `OPTIONS`, e os cabeçalhos `Accept`, `Content-Type` e `X-CSRF-TOKEN`. Credenciais CORS estão habilitadas para que o navegador envie o cookie de sessão. O frontend deve enviar as requisições com credenciais e conservar o cookie entre chamadas. Outras origens são recusadas.
+Por exemplo:
+
+```powershell
+curl.exe http://localhost:8080/api/usuarios/me `
+  -H "Authorization: Bearer $token"
+```
+
+Os tokens contêm `sub` com o login do funcionário, as authorities, `iat` e `exp`. A validade padrão é de 30 minutos.
+
+## Configuração
+
+Defina `JWT_SECRET` como uma chave aleatória de pelo menos 32 bytes codificada em Base64. `JWT_EXPIRATION` é opcional e representa milissegundos; o padrão é `1800000` (30 minutos).
+
+Exemplo para gerar uma chave local no PowerShell:
+
+```powershell
+$bytes = New-Object byte[] 32
+$rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+try { $rng.GetBytes($bytes) } finally { $rng.Dispose() }
+$env:JWT_SECRET = [Convert]::ToBase64String($bytes)
+$env:JWT_EXPIRATION = '1800000'
+```
+
+Não grave a chave em código, arquivo versionado ou logs. O emissor (`JwtUtils`) e o Resource Server usam os mesmos bytes decodificados da chave para assinar e validar HS256.
+
+## Senhas
+
+A migration de desenvolvimento atual insere `admin123` em texto plano e o encoder do login mantém compatibilidade com esses registros. Não use esse armazenamento em produção. O uso de BCrypt exige migração das senhas existentes e mudança coordenada do `PasswordEncoder`.
+
+## CORS
+
+O CORS permite a origem `http://localhost:4200`, métodos `GET`, `POST`, `PUT`, `PATCH`, `DELETE` e `OPTIONS`, além dos cabeçalhos `Accept`, `Authorization` e `Content-Type`. A autenticação usa token Bearer, não cookies de sessão.
 
 ## Testes
 
-Execute a classe de integração e a suíte do módulo a partir da raiz do repositório:
+Na raiz do repositório:
 
 ```powershell
-.\application\mvnw.cmd -f application\pom.xml -Dtest=UsuarioControllerIntegrationTest test
+.\application\mvnw.cmd -f application\pom.xml -Dtest=AuthTests test
 .\application\mvnw.cmd -f application\pom.xml test
 ```
 
-Os testes de integração cobrem sessão, rotação de sessão, login, CSRF, logout, acesso a `/api/usuarios/me` e CORS.
+Os testes verificam emissão do JWT e dados do funcionário, credenciais inválidas, bloqueio de funcionário inativo, campos obrigatórios, autenticação Bearer em rota protegida e documentação OpenAPI.
