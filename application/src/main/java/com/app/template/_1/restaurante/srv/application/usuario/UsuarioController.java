@@ -1,28 +1,27 @@
 package com.app.template._1.restaurante.srv.application.usuario;
 
-import org.springframework.http.HttpStatus;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 public class UsuarioController {
-    private final UsuarioRepository usuarioRepository;
-
-    public UsuarioController(UsuarioRepository usuarioRepository) {
-        this.usuarioRepository = usuarioRepository;
-    }
-
     @GetMapping("/api/usuarios/me")
+    @Operation(summary = "Consultar usuário autenticado", responses = {
+        @ApiResponse(responseCode = "200", description = "Identidade da sessão autenticada",
+                content = @Content(mediaType = "application/json",
+                        examples = @ExampleObject(value =
+                                "{\"username\":\"user\",\"authorities\":[\"ROLE_USER\"]}"))),
+        @ApiResponse(responseCode = "401", description = "Sessão ausente ou não autenticada",
+                content = @Content)
+    })
     public UsuarioResponse me() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        // O filtro define o principal como o email do usuario encontrado no banco.
-        String email = authentication.getName();
-        Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Usuario autenticado nao encontrado"));
         return UsuarioResponse.from(authentication);
     }
 }

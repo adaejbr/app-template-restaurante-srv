@@ -1,211 +1,185 @@
 package com.app.template._1.restaurante.srv.application.usuario;
 
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import java.util.Map;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.junit.jupiter.params.provider.EnumSource;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestMapping;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import java.time.Instant;
-import java.util.Base64;
-import java.util.Date;
-import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.crypto.MACSigner;
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
-import org.junit.jupiter.api.BeforeEach;
+
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.MvcResult;
+import tools.jackson.databind.ObjectMapper;
 
-@SpringBootTest
+@SpringBootTest(properties = {
+    "spring.security.user.name=joao@exemplo.com",
+    "spring.security.user.password=integration-password",
+    "spring.security.user.roles=USER"
+})
 @AutoConfigureMockMvc
-@Import(UsuarioControllerIntegrationTest.ProbeConfiguration.class)
 class UsuarioControllerIntegrationTest {
-    @Autowired MockMvc mvc;
-    @MockitoSpyBean UsuarioController controller;
-    @Autowired UsuarioRepository repository;
-    @Value("${security.jwt.secret}") String secret;
-    private Long usuarioId;
+    private static final String USERNAME = "joao@exemplo.com";
+    private static final String PASSWORD = "integration-password";
+    private static final String ANGULAR_ORIGIN = "http://localhost:4200";
 
-    @BeforeEach
-    void preparar() {
-        repository.deleteAll();
-        usuarioId = repository.save(new Usuario("Joao", "joao@exemplo.com")).getId();
-        repository.save(new Usuario("Outra pessoa", "outro@exemplo.com"));
+    @Autowired
+    MockMvc mvc;
+
+    @Autowired
+    ObjectMapper mapper;
+
+    @MockitoSpyBean
+    UsuarioController controller;
+
+    @Test
+    void loginCriaSessaoEPermiteConsultarUsuarioAutenticado() throws Exception {
+        CsrfSession csrf = csrf();
+        String oldSessionId = csrf.session().getId();
+
+        login(csrf, USERNAME, PASSWORD)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value(USERNAME))
+                .andExpect(jsonPath("$.authorities[0]").value("ROLE_USER"))
+                .andExpect(jsonPath("$.password").doesNotExist());
+
+        assertNotEquals(oldSessionId, csrf.session().getId());
+        mvc.perform(get("/api/usuarios/me").session(csrf.session()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value(USERNAME))
+                .andExpect(jsonPath("$.authorities[0]").value("ROLE_USER"))
+                .andExpect(jsonPath("$.password").doesNotExist());
     }
 
     @Test
-    void tokenValidoRetornaSomenteUsuarioAutenticado() throws Exception {
-        mvc.perform(get("/api/usuarios/me?email=outro@exemplo.com")
-                .header("Authorization", "Bearer " + token("joao@exemplo.com", 3600L, secret, null)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(usuarioId.intValue()))
-                .andExpect(jsonPath("$.nome").value("Joao"))
-                .andExpect(jsonPath("$.email").value("joao@exemplo.com"))
-                .andExpect(jsonPath("$.senha").doesNotExist());
-    }
-
-    @Test void semTokenRetorna401() throws Exception {
-        mvc.perform(get("/api/usuarios/me")).andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(401));
-    }
-    @Test void expiradoRetorna403() throws Exception {
-        chamada(token("joao@exemplo.com", -1L, secret, null), 403);
-    }
-    @Test void assinaturaErradaRetorna401MesmoComExpiracaoPassada() throws Exception {
-        chamada(token("joao@exemplo.com", -3600L,
-                Base64.getEncoder().encodeToString(new byte[32]), null), 401);
-    }
-    @Test void tokenMalformadoRetorna401() throws Exception { chamada("nao-e-um-jwt", 401); }
-    @Test void semEmailRetorna401() throws Exception { chamada(token(null, 3600L, secret, null), 401); }
-    @Test void semExpiracaoRetorna401() throws Exception {
-        chamada(token("joao@exemplo.com", null, secret, null), 401);
-    }
-    @Test void aindaNaoValidoRetorna401() throws Exception {
-        chamada(token("joao@exemplo.com", 3600L, secret, Instant.now().plusSeconds(600)), 401);
-    }
-    @Test void usuarioInexistenteRetorna401() throws Exception {
-        chamada(token("ausente@exemplo.com", 3600L, secret, null), 401);
-    }
-    @ParameterizedTest
-    @EnumSource(Cargo.class)
-    void contextoContemTipoEmailECargoDoBanco(Cargo cargo) throws Exception {
-        repository.deleteAll();
-        repository.save(new Usuario("Joao", "joao@exemplo.com", cargo));
-        mvc.perform(get("/teste/contexto").header("Authorization",
-                "Bearer " + token("joao@exemplo.com", 3600L, secret, null)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.tipo").value("UsernamePasswordAuthenticationToken"))
-                .andExpect(jsonPath("$.email").value("joao@exemplo.com"))
-                .andExpect(jsonPath("$.authorities[0]").value("ROLE_" + cargo.name()));
-        assertNull(SecurityContextHolder.getContext().getAuthentication());
-        mvc.perform(get("/teste/contexto")).andExpect(status().isUnauthorized());
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"/api/auth/login", "/swagger-ui.html", "/swagger-ui/index.html",
-            "/api/docs", "/api/docs/swagger-config", "/v3/api-docs", "/v3/api-docs/swagger-config"})
-    void rotasPublicasIgnoramAusenciaETokenInvalido(String path) throws Exception {
-        mvc.perform(get(path)).andExpect(status().isOk());
-        mvc.perform(get(path).header("Authorization", "Bearer invalido"))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void loginAceitaPostSemAutenticacao() throws Exception {
-        mvc.perform(post("/api/auth/login")).andExpect(status().isOk());
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"/api/auth/login-extra", "/api/docs-extra", "/swagger-ui.html-extra",
-            "/api/usuarios/me", "/qualquer-rota"})
-    void demaisRotasExigemToken(String path) throws Exception {
-        mvc.perform(get(path)).andExpect(status().isUnauthorized());
+    void rotaMeExigeSessaoEIgnoraTokenBearer() throws Exception {
+        mvc.perform(get("/api/usuarios/me"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/usuarios/me").header("Authorization", "Bearer token-invalido"))
+                .andExpect(status().isUnauthorized());
         verify(controller, never()).me();
     }
 
     @Test
-    void corsAceitaPreflightAngularSemToken() throws Exception {
-        mvc.perform(options("/api/usuarios/me")
-                .header("Origin", "http://localhost:4200")
-                .header("Access-Control-Request-Method", "GET")
-                .header("Access-Control-Request-Headers", "authorization,content-type"))
+    void loginExigeTokenCsrf() throws Exception {
+        mvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(Map.of(
+                                "username", USERNAME,
+                                "password", PASSWORD))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void credenciaisInvalidasNaoCriamSessaoAutenticada() throws Exception {
+        CsrfSession csrf = csrf();
+        login(csrf, USERNAME, "senha-incorreta")
+                .andExpect(status().isUnauthorized());
+
+        mvc.perform(get("/api/usuarios/me").session(csrf.session()))
+                .andExpect(status().isUnauthorized());
+        verify(controller, never()).me();
+    }
+
+    @Test
+    void logoutExigeCsrfAtualEEncerraSessao() throws Exception {
+        CsrfSession csrf = csrf();
+        login(csrf, USERNAME, PASSWORD).andExpect(status().isOk());
+
+        mvc.perform(post("/api/auth/logout")
+                        .session(csrf.session())
+                        .header(csrf.header(), csrf.token()))
+                .andExpect(status().isForbidden());
+
+        CsrfSession refreshed = csrf(csrf.session());
+        mvc.perform(post("/api/auth/logout")
+                        .session(refreshed.session())
+                        .header(refreshed.header(), refreshed.token()))
+                .andExpect(status().isNoContent());
+
+        mvc.perform(get("/api/usuarios/me"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void corsPermitePreflightComCookiesEHeaderCsrf() throws Exception {
+        mvc.perform(options("/api/auth/login")
+                        .header("Origin", ANGULAR_ORIGIN)
+                        .header("Access-Control-Request-Method", "POST")
+                        .header("Access-Control-Request-Headers", "content-type,x-csrf-token"))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:4200"))
+                .andExpect(header().string("Access-Control-Allow-Origin", ANGULAR_ORIGIN))
+                .andExpect(header().string("Access-Control-Allow-Credentials", "true"))
                 .andExpect(header().exists("Access-Control-Allow-Headers"));
-        verify(controller, never()).me();
     }
 
     @Test
-    void corsRetornaCabecalhosNaRespostaAutenticadaENoErro() throws Exception {
-        mvc.perform(get("/api/usuarios/me").header("Origin", "http://localhost:4200")
-                .header("Authorization", "Bearer " + token("joao@exemplo.com", 3600L, secret, null)))
+    void corsIncluiCabecalhosNasRespostasAutenticadasENaoAutenticadas() throws Exception {
+        CsrfSession csrf = csrf();
+        login(csrf, USERNAME, PASSWORD).andExpect(status().isOk());
+
+        mvc.perform(get("/api/usuarios/me")
+                        .session(csrf.session())
+                        .header("Origin", ANGULAR_ORIGIN))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:4200"));
-        mvc.perform(get("/api/usuarios/me").header("Origin", "http://localhost:4200"))
+                .andExpect(header().string("Access-Control-Allow-Origin", ANGULAR_ORIGIN))
+                .andExpect(header().string("Access-Control-Allow-Credentials", "true"));
+
+        mvc.perform(get("/api/usuarios/me").header("Origin", ANGULAR_ORIGIN))
                 .andExpect(status().isUnauthorized())
-                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:4200"));
+                .andExpect(header().string("Access-Control-Allow-Origin", ANGULAR_ORIGIN))
+                .andExpect(header().string("Access-Control-Allow-Credentials", "true"));
     }
 
     @Test
     void corsRecusaOrigemNaoAutorizada() throws Exception {
-        mvc.perform(options("/api/usuarios/me").header("Origin", "http://outro-site.com")
-                .header("Access-Control-Request-Method", "GET"))
+        mvc.perform(options("/api/usuarios/me")
+                        .header("Origin", "http://outro-site.com")
+                        .header("Access-Control-Request-Method", "GET"))
                 .andExpect(status().isForbidden())
                 .andExpect(header().doesNotExist("Access-Control-Allow-Origin"));
         verify(controller, never()).me();
     }
 
-    @Test
-    void claimsAusentesTemPrioridadeSobreExpiracao() throws Exception {
-        chamada(token(null, -60L, secret, null), 401);
+    private ResultActions login(CsrfSession csrf, String username, String password) throws Exception {
+        return mvc.perform(post("/api/auth/login")
+                .session(csrf.session())
+                .header(csrf.header(), csrf.token())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(Map.of("username", username, "password", password))));
     }
 
-    @Test
-    void tokenNaQueryNaoSubstituiHeader() throws Exception {
-        mvc.perform(get("/api/usuarios/me").param("access_token",
-                token("joao@exemplo.com", 3600L, secret, null)))
-                .andExpect(status().isUnauthorized());
-        verify(controller, never()).me();
+    private CsrfSession csrf() throws Exception {
+        return csrf(null);
     }
 
-    @TestConfiguration(proxyBeanMethods = false)
-    static class ProbeConfiguration {
-        @Bean ProbeController probeController() { return new ProbeController(); }
-    }
-
-    // Rotas artificiais apenas nos testes: provam a politica do filtro, nao implementam login/Swagger.
-    @RestController
-    static class ProbeController {
-        @RequestMapping("/teste/contexto")
-        Map<String, Object> contexto() {
-            var auth = SecurityContextHolder.getContext().getAuthentication();
-            return Map.of("tipo", auth.getClass().getSimpleName(), "email", auth.getName(),
-                    "authorities", auth.getAuthorities().stream().map(a -> a.getAuthority()).toList());
+    private CsrfSession csrf(MockHttpSession session) throws Exception {
+        MockHttpServletRequestBuilder request = get("/api/auth/csrf");
+        if (session != null) {
+            request.session(session);
         }
-
-        @RequestMapping({"/api/auth/login", "/swagger-ui.html", "/swagger-ui/index.html",
-                "/api/docs", "/api/docs/swagger-config", "/v3/api-docs", "/v3/api-docs/swagger-config"})
-        Map<String, String> publico() { return Map.of("resultado", "publico"); }
+        MvcResult result = mvc.perform(request)
+                .andExpect(status().isOk())
+                .andReturn();
+        var json = mapper.readTree(result.getResponse().getContentAsString());
+        var actualSession = (MockHttpSession) result.getRequest().getSession(false);
+        assertNotNull(actualSession);
+        return new CsrfSession(actualSession, json.get("headerName").asString(), json.get("token").asString());
     }
 
-    private void chamada(String token, int expectedStatus) throws Exception {
-        mvc.perform(get("/api/usuarios/me").header("Authorization", "Bearer " + token))
-                .andExpect(status().is(expectedStatus));
-        if (expectedStatus == 401 || expectedStatus == 403) {
-            verify(controller, never()).me();
-        }
-    }
-    private String token(String email, Long segundos, String chave, Instant notBefore) throws Exception {
-        JWTClaimsSet.Builder claims = new JWTClaimsSet.Builder().subject(email).claim("cargo", "ADMIN")
-                .issueTime(Date.from(Instant.now().minusSeconds(7200)));
-        if (segundos != null) {
-            claims.expirationTime(Date.from(Instant.now().plusSeconds(segundos)));
-        }
-        if (notBefore != null) {
-            claims.notBeforeTime(Date.from(notBefore));
-        }
-        SignedJWT jwt = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claims.build());
-        jwt.sign(new MACSigner(Base64.getDecoder().decode(chave)));
-        return jwt.serialize();
+    private record CsrfSession(MockHttpSession session, String header, String token) {
     }
 }
