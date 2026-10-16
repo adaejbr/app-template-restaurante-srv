@@ -1,0 +1,25 @@
+name: Build e qualidade Java
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: application
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+          cache-dependency-path: application/pom.xml
+      - name: Checkstyle, compilação e testes
+        run: bash mvnw --batch-mode --no-transfer-progress clean verify
