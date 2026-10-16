@@ -23,6 +23,6 @@ public class UsuarioController {
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Usuario autenticado nao encontrado"));
-        return UsuarioResponse.from(usuario);
+        return UsuarioResponse.from(authentication);
     }
 }
