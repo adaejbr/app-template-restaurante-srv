@@ -71,7 +71,12 @@ Na raiz do repositório:
 
 ```powershell
 .\application\mvnw.cmd -f application\pom.xml -Dtest=AuthTests test
+.\application\mvnw.cmd -f application\pom.xml -Dtest=AuthenticationControllerTest test
 .\application\mvnw.cmd -f application\pom.xml test
 ```
 
 Os testes verificam emissão do JWT e dados do funcionário, credenciais inválidas, bloqueio de funcionário inativo, campos obrigatórios, autenticação Bearer em rota protegida e documentação OpenAPI.
+
+`AuthenticationControllerTest` usa `@WebMvcTest` com os repositórios mockados para verificar respostas `200`, `400` e `401`, mantendo os filtros de segurança ativos. `AuthTests` mantém o smoke test com o contexto completo e a emissão/validação real do JWT.
+
+O [guia de CI, Checkstyle e testes](ci-testes.md) descreve os pré-requisitos, a configuração do plugin e um exemplo com MockMvc.
