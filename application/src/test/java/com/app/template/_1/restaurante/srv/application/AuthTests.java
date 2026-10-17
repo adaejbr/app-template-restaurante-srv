@@ -1,5 +1,6 @@
 package com.app.template._1.restaurante.srv.application;
 
+import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -78,7 +79,7 @@ class AuthTests {
         mvc.perform(get("/api/usuarios/me").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value(EMAIL))
-                .andExpect(jsonPath("$.authorities[0]").value("ROLE_USER"));
+                .andExpect(jsonPath("$.authorities").value(hasItem("ROLE_USER")));
     }
 
     @Test
