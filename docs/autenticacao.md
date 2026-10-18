@@ -59,7 +59,11 @@ Não grave a chave em código, arquivo versionado ou logs. O emissor (`JwtUtils`
 
 ## Senhas
 
-A migration de desenvolvimento atual insere `admin123` em texto plano e o encoder do login mantém compatibilidade com esses registros. Não use esse armazenamento em produção. O uso de BCrypt exige migração das senhas existentes e mudança coordenada do `PasswordEncoder`.
+A migration inicial insere o gerente `gerente@restaurante.com` com a senha `admin123`. Ao iniciar a aplicação, o `DataInitializer` busca esse funcionário e salva um hash BCrypt de `admin123` se a senha ainda não estiver hasheada. A rotina executa em uma transação e preserva hashes BCrypt existentes, inclusive de senhas alteradas, nas próximas inicializações. Se o gerente não existir, a rotina não cria outro cadastro.
+
+O login utiliza `BCryptPasswordEncoder` para validar a senha informada. A conversão automática se limita ao gerente do seed; outros funcionários precisam ter senhas BCrypt para autenticar. A senha inicial é destinada ao ambiente de desenvolvimento e deve ser alterada em ambientes reais.
+
+Para validar o J-11, inicie a aplicação com o seed, confira o hash na coluna `funcionario.senha` e faça login com `admin123`. Reinicie e confirme que o hash não mudou. Uma senha incorreta deve retornar `401`.
 
 ## CORS
 
@@ -71,7 +75,10 @@ Na raiz do repositório:
 
 ```powershell
 .\application\mvnw.cmd -f application\pom.xml -Dtest=AuthTests test
+.\application\mvnw.cmd -f application\pom.xml -Dtest=DataInitializerTests test
 .\application\mvnw.cmd -f application\pom.xml test
 ```
 
 Os testes verificam emissão do JWT e dados do funcionário, credenciais inválidas, bloqueio de funcionário inativo, campos obrigatórios, autenticação Bearer em rota protegida e documentação OpenAPI.
+
+`DataInitializerTests` usa H2 com o script real `V2__seed_data.sql` carregado antes dos runners. Verifica o hash persistido na inicialização, login com o gerente, senha incorreta, reexecução sem alterar o hash, preservação de senhas alteradas nos formatos BCrypt `$2a$`, `$2b$` e `$2y$` e ausência do gerente sem modificar outro funcionário. Nesse teste, o Hibernate cria o schema e o Flyway fica desativado; a execução das migrations no MySQL não é coberta.
