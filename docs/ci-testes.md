@@ -99,7 +99,7 @@ Exemplo com MockMvc, com os demais imports omitidos. A implementação completa 
 ```java
 @WebMvcTest(AuthenticationController.class)
 @Import({SecurityConfig.class, CustomUserDetailsService.class})
-@MockitoBean(types = {CargoFuncionarioRepository.class, JwtUtils.class, JwtDecoder.class})
+@MockitoBean(types = {CargoFuncionarioRepository.class, JwtUtils.class})
 class AuthenticationControllerTest {
 
     @Autowired
