@@ -15,7 +15,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import com.app.template._1.restaurante.srv.application.core.entity.Funcionario;
@@ -28,7 +27,6 @@ import com.app.template._1.restaurante.srv.application.security.SecurityConfig;
 
 @WebMvcTest(AuthenticationController.class)
 @Import({SecurityConfig.class, CustomUserDetailsService.class})
-@MockitoBean(types = JwtDecoder.class)
 class AuthenticationControllerTest {
 
     private static final String EMAIL = "gerente@restaurante.com";

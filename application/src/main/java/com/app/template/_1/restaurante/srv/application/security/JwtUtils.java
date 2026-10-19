@@ -1,8 +1,10 @@
 package com.app.template._1.restaurante.srv.application.security;
 
-import java.util.List;
 import java.util.Date;
+import java.util.List;
 import javax.crypto.SecretKey;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -10,35 +12,21 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-/**
- * Utilitário de geração/validação de tokens JWT (task j-05).
- *
- * NOTA: esta é uma implementação mínima criada pela j-05.
- * A task j-04 (Spring Security + JWT) deve revisar/expandir este componente.
- */
 @Component
 public class JwtUtils {
 
-    @Value("${jwt.secret}")
-    private String secret;
+    private final SecretKey signingKey;
+    private final long expirationMillis;
 
-    @Value("${jwt.expiration}")
-    private long expirationMillis;
-
-    private SecretKey getSigningKey() {
-        byte[] key = Decoders.BASE64.decode(secret);
-        if (key.length < 32) {
-            throw new IllegalArgumentException("JWT_SECRET deve decodificar para pelo menos 32 bytes");
+    public JwtUtils(@Value("${jwt.secret}") String secret, @Value("${jwt.expiration}") long expirationMillis) {
+        this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+        if (expirationMillis <= 0) {
+            throw new IllegalArgumentException("jwt.expiration deve ser maior que zero");
         }
-        return Keys.hmacShaKeyFor(key);
+        this.expirationMillis = expirationMillis;
     }
 
-    /** Gera um token JWT para o usuário informado. */
     public String generateToken(UserDetails userDetails) {
-        if (expirationMillis <= 0) {
-            throw new IllegalStateException("JWT_EXPIRATION deve ser maior que zero");
-        }
-
         Date now = new Date();
         Date expiration = new Date(now.getTime() + expirationMillis);
         List<String> authorities = userDetails.getAuthorities().stream()
@@ -49,17 +37,28 @@ public class JwtUtils {
                 .claim("authorities", authorities)
                 .issuedAt(now)
                 .expiration(expiration)
-                .signWith(getSigningKey(), Jwts.SIG.HS256)
+                .signWith(signingKey, Jwts.SIG.HS256)
                 .compact();
     }
 
-    /** Extrai o username (login) contido no token. */
     public String extractUsername(String token) {
+        return parseClaims(token).getSubject();
+    }
+
+    public boolean validateToken(String token) {
+        try {
+            String subject = parseClaims(token).getSubject();
+            return subject != null && !subject.isBlank();
+        } catch (JwtException | IllegalArgumentException exception) {
+            return false;
+        }
+    }
+
+    private Claims parseClaims(String token) {
         return Jwts.parser()
-                .verifyWith(getSigningKey())
+                .verifyWith(signingKey)
                 .build()
                 .parseSignedClaims(token)
-                .getPayload()
-                .getSubject();
+                .getPayload();
     }
 }

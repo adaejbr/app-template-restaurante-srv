@@ -1,6 +1,6 @@
 # Autenticação JWT
 
-A API autentica funcionários por e-mail e senha em `POST /api/auth/login` e emite um token JWT assinado com HS256. O Spring Security OAuth2 Resource Server valida esse token nas rotas protegidas.
+A API autentica funcionários por e-mail e senha em `POST /api/auth/login` e emite um token JWT assinado com HS256. O filtro `JwtAuthenticationFilter` valida o Bearer token e popula o `SecurityContext` nas rotas protegidas.
 
 ## Login
 
@@ -55,7 +55,14 @@ $env:JWT_SECRET = [Convert]::ToBase64String($bytes)
 $env:JWT_EXPIRATION = '1800000'
 ```
 
-Não grave a chave em código, arquivo versionado ou logs. O emissor (`JwtUtils`) e o Resource Server usam os mesmos bytes decodificados da chave para assinar e validar HS256.
+Não grave a chave em código, arquivo versionado ou logs. `application.yml` lê o segredo de `JWT_SECRET`; o emissor (`JwtUtils`) e o filtro usam os mesmos bytes decodificados da chave para assinar e validar HS256.
+
+## Integração e diagnóstico
+
+- **Dependências circulares:** evite uma cadeia como `SecurityConfig` → `AuthenticationManager` → serviço de usuários → `SecurityConfig`, ou injetar o `AuthenticationManager` no filtro/serviço que participa da própria configuração de autenticação. Mantenha `CustomUserDetailsService` dependente apenas do repositório; o filtro depende do serviço e de `JwtUtils`; a configuração constrói o `SecurityFilterChain` usando o filtro. O `AuthenticationManager` é exposto via `AuthenticationConfiguration` e usado pelo controller de login.
+- **Compatibilidade JJWT:** `jjwt-api`, `jjwt-impl` e `jjwt-jackson` devem usar a mesma versão (atualmente `0.12.6`), com `jjwt-impl` e `jjwt-jackson` no escopo de runtime. Não misture exemplos antigos de `0.11.x` (`parserBuilder`, `setSigningKey`) com APIs `0.12.x`, que usam `Jwts.parser().verifyWith(...).build()` e `parseSignedClaims(...)`.
+- **Serialização Jackson:** `jjwt-jackson` fornece a integração JSON de claims usada pela implementação JJWT. Não o remova nem exclua a integração JSON transitiva sem fornecer e testar explicitamente uma implementação substituta.
+- **Pair programming:** recomenda-se desenvolver e depurar em pair programming, especialmente ao integrar a cadeia de filtros, `AuthenticationManager` e as propriedades secretas, verificando em conjunto o startup e os fluxos de token válido/inválido.
 
 ## Senhas
 
