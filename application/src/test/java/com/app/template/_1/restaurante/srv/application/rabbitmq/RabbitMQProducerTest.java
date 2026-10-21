@@ -11,7 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import com.app.template._1.restaurante.srv.application.config.RabbitMQConfig;
+import com.app.restaurante.srv.application.config.RabbitMQConfig;
+import com.app.restaurante.srv.application.rabbitmq.RabbitMQProducer;
 
 class RabbitMQProducerTest {
 

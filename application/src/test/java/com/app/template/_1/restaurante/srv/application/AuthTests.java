@@ -19,12 +19,12 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import com.app.template._1.restaurante.srv.application.core.entity.Cargo;
-import com.app.template._1.restaurante.srv.application.core.entity.CargoFuncionario;
-import com.app.template._1.restaurante.srv.application.core.entity.Funcionario;
-import com.app.template._1.restaurante.srv.application.core.entity.Perfil;
-import com.app.template._1.restaurante.srv.application.infra.repository.CargoFuncionarioRepository;
-import com.app.template._1.restaurante.srv.application.infra.repository.FuncionarioRepository;
+import com.app.restaurante.srv.application.core.entity.Cargo;
+import com.app.restaurante.srv.application.core.entity.CargoFuncionario;
+import com.app.restaurante.srv.application.core.entity.Funcionario;
+import com.app.restaurante.srv.application.core.entity.Perfil;
+import com.app.restaurante.srv.application.infra.repository.CargoFuncionarioRepository;
+import com.app.restaurante.srv.application.infra.repository.FuncionarioRepository;
 import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest

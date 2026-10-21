@@ -19,9 +19,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder.BCryptVe
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
-import com.app.template._1.restaurante.srv.application.config.DataInitializer;
-import com.app.template._1.restaurante.srv.application.core.entity.Funcionario;
-import com.app.template._1.restaurante.srv.application.infra.repository.FuncionarioRepository;
+import com.app.restaurante.srv.application.config.DataInitializer;
+import com.app.restaurante.srv.application.core.entity.Funcionario;
+import com.app.restaurante.srv.application.infra.repository.FuncionarioRepository;
 
 @SpringBootTest(properties = {
     "spring.datasource.url=jdbc:h2:mem:j11;MODE=MySQL;DB_CLOSE_DELAY=-1",

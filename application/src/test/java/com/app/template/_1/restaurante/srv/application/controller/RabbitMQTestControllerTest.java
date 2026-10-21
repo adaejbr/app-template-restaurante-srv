@@ -12,11 +12,12 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import com.app.template._1.restaurante.srv.application.rabbitmq.RabbitMQProducer;
-import com.app.template._1.restaurante.srv.application.security.CustomUserDetailsService;
-import com.app.template._1.restaurante.srv.application.security.JwtUtils;
-import com.app.template._1.restaurante.srv.application.security.SecurityConfig;
-import com.app.template._1.restaurante.srv.application.infra.repository.FuncionarioRepository;
+import com.app.restaurante.srv.application.rabbitmq.RabbitMQProducer;
+import com.app.restaurante.srv.application.security.CustomUserDetailsService;
+import com.app.restaurante.srv.application.security.JwtUtils;
+import com.app.restaurante.srv.application.security.SecurityConfig;
+import com.app.restaurante.srv.application.controller.RabbitMQTestController;
+import com.app.restaurante.srv.application.infra.repository.FuncionarioRepository;
 
 @WebMvcTest(RabbitMQTestController.class)
 @Import({SecurityConfig.class, CustomUserDetailsService.class})

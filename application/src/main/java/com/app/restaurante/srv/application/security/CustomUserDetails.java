@@ -1,0 +1,56 @@
+package com.app.restaurante.srv.application.security;
+
+import java.util.Collection;
+import java.util.List;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import com.app.restaurante.srv.application.core.entity.Funcionario;
+
+public class CustomUserDetails implements UserDetails {
+
+    private final Funcionario funcionario;
+
+    public CustomUserDetails(Funcionario funcionario) {
+        this.funcionario = funcionario;
+    }
+
+    public Funcionario getFuncionario() {
+        return funcionario;
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+    }
+
+    @Override
+    public String getPassword() {
+        return funcionario.getSenha();
+    }
+
+    @Override
+    public String getUsername() {
+        return funcionario.getLogin();
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return "ATIVO".equals(funcionario.getStatus());
+    }
+}
