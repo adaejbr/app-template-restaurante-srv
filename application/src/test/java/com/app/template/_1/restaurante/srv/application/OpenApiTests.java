@@ -62,6 +62,9 @@ class OpenApiTests {
                 .andExpect(jsonPath("$.paths['/api/usuarios/me'].get.responses['200'].content"
                         + "['application/json'].example.username").value("user"))
                 .andExpect(jsonPath("$.paths['/api/usuarios/me'].get.responses['401']").exists())
+                .andExpect(jsonPath("$.paths['/api/teste/rabbit'].post.summary")
+                        .value("Publicar mensagem de teste no RabbitMQ"))
+                .andExpect(jsonPath("$.paths['/api/teste/rabbit'].post.responses['401']").exists())
                 .andExpect(jsonPath("$.paths['/test/example/{id}']").doesNotExist());
     }
 }
