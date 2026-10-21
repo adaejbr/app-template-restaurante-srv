@@ -40,6 +40,9 @@ class AuthTests {
     @Autowired
     private ObjectMapper mapper;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @Value("${jwt.secret}")
     private String jwtSecret;
 
