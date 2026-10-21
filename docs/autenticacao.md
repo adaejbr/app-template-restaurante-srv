@@ -66,7 +66,11 @@ Não grave a chave em código, arquivo versionado ou logs. `application.yml` lê
 
 ## Senhas
 
-A migration de desenvolvimento atual insere `admin123` em texto plano e o encoder do login mantém compatibilidade com esses registros. Não use esse armazenamento em produção. O uso de BCrypt exige migração das senhas existentes e mudança coordenada do `PasswordEncoder`.
+A migration inicial insere o gerente `gerente@restaurante.com` com a senha `admin123`. Ao iniciar a aplicação, o `DataInitializer` busca esse funcionário e salva um hash BCrypt de `admin123` se a senha ainda não estiver hasheada. A rotina executa em uma transação e preserva hashes BCrypt existentes, inclusive de senhas alteradas, nas próximas inicializações. Se o gerente não existir, a rotina não cria outro cadastro.
+
+O login utiliza `BCryptPasswordEncoder` para validar a senha informada. A conversão automática se limita ao gerente do seed; outros funcionários precisam ter senhas BCrypt para autenticar. A senha inicial é destinada ao ambiente de desenvolvimento e deve ser alterada em ambientes reais.
+
+Para validar o J-11, inicie a aplicação com o seed, confira o hash na coluna `funcionario.senha` e faça login com `admin123`. Reinicie e confirme que o hash não mudou. Uma senha incorreta deve retornar `401`.
 
 ## CORS
 

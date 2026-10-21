@@ -115,4 +115,4 @@ Na próxima subida da aplicação, o Flyway recria tudo do zero (V1 → V2 → .
 
 Sobre a senha do funcionário seed (gerente@restaurante.com)
 
-A senha inserida pelo V2__seed_data.sql está em texto plano (admin123). A criptografia (BCrypt) deve ser aplicada pelo backend — via CommandLineRunner no startup ou no momento do login — antes de considerar esse fluxo pronto para produção.
+A senha inserida pelo V2__seed_data.sql está em texto plano (admin123). No startup, `DataInitializer` busca esse funcionário e salva a senha com BCrypt. Inicializações seguintes preservam hashes BCrypt existentes, inclusive hashes de senhas alteradas; se o funcionário seed não existir, nenhum outro cadastro é modificado. O login continua usando a senha `admin123` em texto puro, que o Spring Security compara com o hash armazenado. Consulte o [guia de autenticação](docs/autenticacao.md#senhas) para detalhes e validação.

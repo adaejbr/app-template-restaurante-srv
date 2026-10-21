@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import com.app.template._1.restaurante.srv.application.core.entity.Cargo;
@@ -39,6 +40,9 @@ class AuthTests {
     @Autowired
     private ObjectMapper mapper;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @Value("${jwt.secret}")
     private String jwtSecret;
 
@@ -50,10 +54,11 @@ class AuthTests {
 
     @BeforeEach
     void prepareUsers() {
-        Funcionario active = funcionario(EMAIL, PASSWORD, "ATIVO");
+        String hash = passwordEncoder.encode(PASSWORD);
+        Funcionario active = funcionario(EMAIL, hash, "ATIVO");
         when(funcionarioRepository.findByLogin(EMAIL)).thenReturn(active);
         when(funcionarioRepository.findByLogin("inativo@restaurante.com"))
-                .thenReturn(funcionario("inativo@restaurante.com", PASSWORD, "INATIVO"));
+                .thenReturn(funcionario("inativo@restaurante.com", hash, "INATIVO"));
         when(cargoFuncionarioRepository.findFirstByIdFuncionarioAndStatus(1, "ATIVO"))
                 .thenReturn(Optional.of(CargoFuncionario.builder()
                         .idFuncionario(1)
