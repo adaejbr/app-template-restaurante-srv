@@ -12,6 +12,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
@@ -39,8 +40,8 @@ class AuthTests {
     @Autowired
     private ObjectMapper mapper;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    @Value("${jwt.secret}")
+    private String jwtSecret;
 
     @MockitoBean
     private FuncionarioRepository funcionarioRepository;
@@ -118,6 +119,21 @@ class AuthTests {
         mvc.perform(get("/api/usuarios/me"))
                 .andExpect(status().isUnauthorized());
         mvc.perform(get("/api/usuarios/me").header("Authorization", "Bearer invalid"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void protectedEndpointRejectsExpiredToken() throws Exception {
+        long now = System.currentTimeMillis();
+        String expiredToken = io.jsonwebtoken.Jwts.builder()
+                .subject(EMAIL)
+                .issuedAt(new java.util.Date(now - 120_000))
+                .expiration(new java.util.Date(now - 60_000))
+                .signWith(io.jsonwebtoken.security.Keys.hmacShaKeyFor(
+                        io.jsonwebtoken.io.Decoders.BASE64.decode(jwtSecret)), io.jsonwebtoken.Jwts.SIG.HS256)
+                .compact();
+
+        mvc.perform(get("/api/usuarios/me").header("Authorization", "Bearer " + expiredToken))
                 .andExpect(status().isUnauthorized());
     }
 

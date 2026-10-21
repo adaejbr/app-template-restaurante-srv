@@ -1,4 +1,8 @@
 # App_Template_01_Restaurante_Backend
+
+Consulte o [guia de CI, Checkstyle e testes](docs/ci-testes.md) para validar o projeto localmente e entender o workflow do GitHub Actions da J-10.
+Consulte também o [guia de integração RabbitMQ](docs/rabbitmq.md) para subir o broker, acessar o Management UI e publicar uma mensagem de teste.
+
 Migração de Banco de Dados (Flyway)
 
 Este projeto usa o Flyway para versionar e aplicar automaticamente as alterações no schema do banco MySQL.

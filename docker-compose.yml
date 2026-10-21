@@ -22,6 +22,12 @@ services:
     ports:
       - "5672:5672"    # Porta do protocolo AMQP
       - "15672:15672"  # Porta do Painel de Gerenciamento Web
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
   adminer:
     image: adminer
     container_name: adminer

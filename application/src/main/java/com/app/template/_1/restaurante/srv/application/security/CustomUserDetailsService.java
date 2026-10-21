@@ -7,12 +7,6 @@ import org.springframework.stereotype.Service;
 import com.app.template._1.restaurante.srv.application.core.entity.Funcionario;
 import com.app.template._1.restaurante.srv.application.infra.repository.FuncionarioRepository;
 
-/**
- * Carrega o usuário para autenticação buscando o Funcionario pelo login
- * (o campo `login` da tabela guarda o e-mail do funcionário — task j-05).
- *
- * NOTA: implementação mínima criada pela j-05; a j-04 deve revisar/expandir.
- */
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
