@@ -35,7 +35,7 @@ public final class CnpjSupport {
         }
         String trimmed = value.strip();
         if (!RAW.matcher(trimmed).matches() && !MASKED.matcher(trimmed).matches()) {
-            return trimmed.toUpperCase(Locale.ROOT);
+            return trimmed;
         }
         return trimmed.replace(".", "").replace("/", "").replace("-", "").toUpperCase(Locale.ROOT);
     }

@@ -45,6 +45,7 @@ class CnpjValidatorTest {
         }
         assertEquals("12ABC34501DE35", CnpjSupport.normalize("12.abc.345/01de-35"));
         assertEquals("04252011000110", CnpjSupport.normalize("04.252.011/0001-10"));
+        assertEquals("12ßC34501DE33", CnpjSupport.normalize("12ßC34501DE33"));
     }
 
     private record Input(@NotBlank @CNPJ String cnpj) {

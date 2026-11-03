@@ -127,7 +127,7 @@ class RestauranteCnpjTests {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"11222333000180", "11--222333000181"})
+    @ValueSource(strings = {"11222333000180", "11--222333000181", "12ßC34501DE33"})
     void directRepositoryRejectsInvalidCnpj(String cnpj) {
         Restaurante restaurante = repository.findById(901).orElseThrow();
         restaurante.setCnpj(cnpj);
