@@ -1,4 +1,4 @@
-package com.app.template._1.restaurante.srv.application;
+package com.app.restaurante.srv.application;
 
 import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.Mockito.when;
@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.test.context.ActiveProfiles;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,7 @@ import com.app.restaurante.srv.application.infra.repository.CargoFuncionarioRepo
 import com.app.restaurante.srv.application.infra.repository.FuncionarioRepository;
 import tools.jackson.databind.ObjectMapper;
 
+@ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
 class AuthTests {
