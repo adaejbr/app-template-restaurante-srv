@@ -220,26 +220,28 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-				<groupId>org.flywaydb</groupId>
-				<artifactId>flyway-maven-plugin</artifactId>
-				<configuration>
-					<url>jdbc:mysql://localhost:3306/restaurante_db</url>
-					<user>rest_user</user>
-					<password>rest_pass</password>
-					<locations>
-						<location>classpath:db/migration</location>
-					</locations>
-				</configuration>
-				<dependencies>
-					<dependency>
-						<groupId>org.flywaydb</groupId>
-						<artifactId>flyway-mysql</artifactId>
-						<version>12.4.0</version>
-					</dependency>
-				</dependencies>
-			</plugin>
 		</plugins>
 	</build>
 
+    <profiles>
+        <profile>
+            <id>mysql-integration</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

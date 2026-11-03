@@ -1,118 +1,40 @@
 # App_Template_01_Restaurante_Backend
 
-Consulte o [guia de CI, Checkstyle e testes](docs/ci-testes.md) para validar o projeto localmente e entender o workflow do GitHub Actions da J-10.
-Consulte também o [guia de integração RabbitMQ](docs/rabbitmq.md) para subir o broker, acessar o Management UI e publicar uma mensagem de teste.
+Backend Spring Boot 4.1, Java 25 e MySQL 8, com autentica??o JWT e schema gerenciado por Flyway.
 
-Migração de Banco de Dados (Flyway)
+- [Estrutura de pacotes, perfis dev/test/prod e execu??o com MySQL](docs/estrutura-e-perfis.md).
+- [CI, Checkstyle e testes](docs/ci-testes.md).
+- [Autentica??o](docs/autenticacao.md).
+- [RabbitMQ](docs/rabbitmq.md).
 
-Este projeto usa o Flyway para versionar e aplicar automaticamente as alterações no schema do banco MySQL.
+Na raiz, configure as vari?veis do `docker-compose.yml` no `.env`: `DB_ROOT_PASSWORD`,
+`DB_NAME`, `DB_USER`, `DB_PASSWORD`, `RABBITMQ_USER` e `RABBITMQ_PASSWORD`.
+O Compose l? esse arquivo; o processo Java precisa receber suas vari?veis pelo ambiente.
+N?o versione credenciais. `DB_USERNAME` ? um alias com preced?ncia sobre `DB_USER`.
 
-Pré-requisitos
-Docker e Docker Compose rodando os containers mysql_db, rabbitmq e adminer (ver docker-compose.yml na raiz do projeto)
-Arquivo .env na raiz do projeto com as variáveis:
-env
-  DB_ROOT_PASSWORD=<senha_root>
-  DB_NAME=<nome_do_banco>
-  DB_USER=<usuario>
-  DB_PASSWORD=<senha>
-  RABBITMQ_USER=<usuario>
-  RABBITMQ_PASSWORD=<senha>
-Dependências no pom.xml
+```powershell
+docker compose up -d
+cd application
+.\mvnw.cmd spring-boot:run
+```
 
-⚠️ Importante: a partir do Spring Boot 4.0, o Flyway foi modularizado. Não basta adicionar org.flywaydb:flyway-core sozinho — é necessário o starter oficial do Spring Boot, senão a auto-configuração do Flyway não é ativada (a aplicação sobe normalmente, sem erro, mas nenhuma migration roda).
+O perfil padr?o ? `dev`. Exporte as mesmas credenciais do banco antes de executar;
+veja os exemplos completos no guia de estrutura. Para produ??o, use
+`SPRING_PROFILES_ACTIVE=prod`, `DB_URL`, `DB_USERNAME`/`DB_USER`, `DB_PASSWORD` e
+`JWT_SECRET` (Base64 de uma chave de ao menos 32 bytes).
 
-xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-flyway</artifactId>
-</dependency>
-<dependency>
-    <groupId>org.flywaydb</groupId>
-    <artifactId>flyway-mysql</artifactId>
-</dependency>
-<dependency>
-    <groupId>com.mysql</groupId>
-    <artifactId>mysql-connector-j</artifactId>
-    <scope>runtime</scope>
-</dependency>
-Configuração (application.properties)
-properties
-spring.application.name=application
+As migrations ficam em `application/src/main/resources/db/migration` e usam
+`V<versao>__<descricao>.sql`. Nunca altere scripts j? aplicados: crie uma nova vers?o.
+O Flyway executa antes do Hibernate, que usa `ddl-auto=validate`;
+`open-in-view=false` mant?m acesso ao banco dentro das transa??es.
 
-# Datasource
-spring.datasource.url=jdbc:mysql://localhost:3306/${DB_NAME}
-spring.datasource.username=${DB_USER}
-spring.datasource.password=${DB_PASSWORD}
-spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+O seed legado cria `gerente@restaurante.com`; o inicializador converte a senha
+inicial em BCrypt de forma idempotente. A credencial de demonstra??o e a chave JWT
+local s?o exclusivas do desenvolvimento.
 
-# JPA / Hibernate
-# ddl-auto=validate: o Hibernate NAO cria/altera tabelas, so confere se bate
-# com o que o Flyway ja criou. Quem manda no schema e o Flyway.
-spring.jpa.hibernate.ddl-auto=validate
-spring.jpa.show-sql=true
-
-# Flyway
-spring.flyway.enabled=true
-spring.flyway.locations=classpath:db/migration
-
-localhost é usado porque a aplicação roda fora do Docker. Se a aplicação também rodar dentro do Docker Compose, trocar por mysql_db (nome do container).
-
-Estrutura das migrations
-
-Os scripts ficam em:
-
-src/main/resources/db/migration/
-├── V1__init.sql        -- schema completo (DER)
-└── V2__seed_data.sql   -- carga inicial (seed)
-
-Convenção de nome obrigatória: V{versão}__{descrição}.sql
-
-V maiúsculo
-Dois underscores entre a versão e a descrição (V1__init, não V1_init) — o Flyway ignora silenciosamente arquivos fora desse padrão
-Como rodar
-
-1. Suba os containers (na raiz do projeto):
-
-powershell
-docker-compose up -d
-
-2. Rode a aplicação (na pasta application), com as variáveis de ambiente do .env:
-
-powershell
-${env:DB_ROOT_PASSWORD}='<senha_root>'; ${env:DB_NAME}='<nome_do_banco>'; ${env:DB_USER}='<usuario>'; ${env:DB_PASSWORD}='<senha>'; ${env:RABBITMQ_USER}='<usuario>'; ${env:RABBITMQ_PASSWORD}='<senha>'; .\mvnw.cmd spring-boot:run
-
-O Flyway roda automaticamente no startup, antes do Hibernate/JPA. No log, deve aparecer:
-
-Successfully validated 2 migrations
-Creating Schema History table `<banco>`.`flyway_schema_history` ...
-Migrating schema `<banco>` to version "1 - init"
-Migrating schema `<banco>` to version "2 - seed data"
-Successfully applied 2 migrations to schema `<banco>`, now at version v2
-Verificando
-
-Confirmar o histórico de migrations aplicadas:
-
-powershell
-docker exec -it mysql_db mysql -u root -p"<senha_root>" -e "USE <nome_do_banco>; SELECT * FROM flyway_schema_history;"
-
-Confirmar os dados do seed:
-
-powershell
-docker exec -it mysql_db mysql -u root -p"<senha_root>" -e "USE <nome_do_banco>; SELECT login, status FROM funcionario;"
-Adicionando uma nova migration
-
-Nunca edite um script já aplicado (V1, V2, etc.) — o Flyway calcula um checksum de cada arquivo e falha se detectar alteração em uma migration já executada. Para mudar o schema, crie um novo arquivo com o próximo número de versão:
-
-src/main/resources/db/migration/V3__descricao_da_mudanca.sql
-
-Na próxima subida da aplicação, o Flyway detecta e aplica automaticamente só o que for novo.
-
-Resetando o banco em desenvolvimento
-powershell
-docker exec -it mysql_db mysql -u root -p"<senha_root>" -e "DROP DATABASE <nome_do_banco>; CREATE DATABASE <nome_do_banco>;"
-
-Na próxima subida da aplicação, o Flyway recria tudo do zero (V1 → V2 → ...).
-
-Sobre a senha do funcionário seed (gerente@restaurante.com)
-
-A senha inserida pelo V2__seed_data.sql está em texto plano (admin123). No startup, `DataInitializer` busca esse funcionário e salva a senha com BCrypt. Inicializações seguintes preservam hashes BCrypt existentes, inclusive hashes de senhas alteradas; se o funcionário seed não existir, nenhum outro cadastro é modificado. O login continua usando a senha `admin123` em texto puro, que o Spring Security compara com o hash armazenado. Consulte o [guia de autenticação](docs/autenticacao.md#senhas) para detalhes e validação.
+```powershell
+# Testes isolados, sem servi?os externos:
+.\mvnw.cmd --batch-mode --no-transfer-progress clean verify
+# Acrescenta testes em MySQL exclusivo (configura??o no guia):
+.\mvnw.cmd --batch-mode --no-transfer-progress -Pmysql-integration clean verify
+```
