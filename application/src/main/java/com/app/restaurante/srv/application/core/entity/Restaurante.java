@@ -1,5 +1,10 @@
 package com.app.restaurante.srv.application.core.entity;
 
+import com.ada.erp.shared.validation.CNPJ;
+import com.ada.erp.shared.validation.CnpjSupport;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -32,6 +37,8 @@ public class Restaurante {
     private String nome;
 
     @Column(nullable = false, unique = true, length = 18)
+    @NotBlank
+    @CNPJ
     private String cnpj;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -46,4 +53,10 @@ public class Restaurante {
     @JoinColumn(name = "id_configuracao", nullable = false, unique = true,
         foreignKey = @ForeignKey(name = "fk_restaurante_configuracao"))
     private Configuracao configuracao;
+
+    @PrePersist
+    @PreUpdate
+    void normalizeCnpj() {
+        cnpj = CnpjSupport.normalize(cnpj);
+    }
 }
