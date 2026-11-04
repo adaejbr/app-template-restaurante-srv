@@ -1,4 +1,4 @@
-package com.app.template._1.restaurante.srv.application.controller;
+package com.app.restaurante.srv.application.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Optional;
+import org.springframework.test.context.ActiveProfiles;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -18,7 +19,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.app.restaurante.srv.application.controller.AuthenticationController;
 import com.app.restaurante.srv.application.core.entity.Funcionario;
 import com.app.restaurante.srv.application.core.entity.Perfil;
 import com.app.restaurante.srv.application.infra.repository.CargoFuncionarioRepository;
@@ -27,6 +27,7 @@ import com.app.restaurante.srv.application.security.CustomUserDetailsService;
 import com.app.restaurante.srv.application.security.JwtUtils;
 import com.app.restaurante.srv.application.security.SecurityConfig;
 
+@ActiveProfiles("test")
 @WebMvcTest(AuthenticationController.class)
 @Import({SecurityConfig.class, CustomUserDetailsService.class})
 class AuthenticationControllerTest {

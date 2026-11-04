@@ -1,4 +1,4 @@
-package com.app.template._1.restaurante.srv.application;
+package com.app.restaurante.srv.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.springframework.test.context.ActiveProfiles;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -23,6 +24,7 @@ import com.app.restaurante.srv.application.config.DataInitializer;
 import com.app.restaurante.srv.application.core.entity.Funcionario;
 import com.app.restaurante.srv.application.infra.repository.FuncionarioRepository;
 
+@ActiveProfiles("test")
 @SpringBootTest(properties = {
     "spring.datasource.url=jdbc:h2:mem:j11;MODE=MySQL;DB_CLOSE_DELAY=-1",
     "spring.flyway.enabled=false",

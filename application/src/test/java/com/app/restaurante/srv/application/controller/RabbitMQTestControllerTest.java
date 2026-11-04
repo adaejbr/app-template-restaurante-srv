@@ -1,4 +1,4 @@
-package com.app.template._1.restaurante.srv.application.controller;
+package com.app.restaurante.srv.application.controller;
 
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.springframework.test.context.ActiveProfiles;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -16,9 +17,9 @@ import com.app.restaurante.srv.application.rabbitmq.RabbitMQProducer;
 import com.app.restaurante.srv.application.security.CustomUserDetailsService;
 import com.app.restaurante.srv.application.security.JwtUtils;
 import com.app.restaurante.srv.application.security.SecurityConfig;
-import com.app.restaurante.srv.application.controller.RabbitMQTestController;
 import com.app.restaurante.srv.application.infra.repository.FuncionarioRepository;
 
+@ActiveProfiles("test")
 @WebMvcTest(RabbitMQTestController.class)
 @Import({SecurityConfig.class, CustomUserDetailsService.class})
 class RabbitMQTestControllerTest {
