@@ -19,7 +19,7 @@ Não crie cópias de entidades/repositórios: mova cada implementação quando s
 
 | Perfil | Datasource | JWT | Flyway/JPA | Logging |
 | --- | --- | --- | --- | --- |
-| dev (padrão) | MySQL local; DB_URL ou DB_NAME, DB_USERNAME/DB_USER e DB_PASSWORD | chave apenas local, substituível por JWT_SECRET | migrations + validate; open-in-view=false | aplicação DEBUG; restante INFO |
+| dev (padrão) | MySQL local; DB_URL ou DB_NAME, DB_USERNAME/DB_USER e DB_PASSWORD | JWT_SECRET obrigatório em Base64, ao menos 32 bytes | migrations + validate; open-in-view=false | aplicação DEBUG; restante INFO |
 | test | H2 isolado, dependência de teste | chave exclusiva de teste | Flyway desativado; create-drop exclusivamente para testes isolados | raiz WARN |
 | prod | DB_URL, DB_USERNAME/DB_USER e DB_PASSWORD obrigatórios | JWT_SECRET obrigatório em Base64, ao menos 32 bytes | migrations + validate; open-in-view=false | INFO; SQL WARN |
 
@@ -41,11 +41,16 @@ $env:SPRING_PROFILES_ACTIVE = 'dev'
 $env:DB_NAME = 'restaurante'
 $env:DB_USER = 'rest_user'
 $env:DB_PASSWORD = '<senha-do-MySQL>'
+$bytes = New-Object byte[] 32
+$rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+try { $rng.GetBytes($bytes) } finally { $rng.Dispose() }
+$env:JWT_SECRET = [Convert]::ToBase64String($bytes)
 .\mvnw.cmd spring-boot:run
 ```
 
-É necessário JDK 25. Em prod, configure SPRING_PROFILES_ACTIVE=prod e todas as
-credenciais no ambiente. Nenhuma chave de produção é versionada.
+É necessário JDK 25. JWT_SECRET é obrigatória em dev e prod, sem valor padrão;
+use uma chave própria para cada ambiente. Em prod, configure
+SPRING_PROFILES_ACTIVE=prod e todas as credenciais no ambiente. Não versione as chaves.
 
 ## Validar
 

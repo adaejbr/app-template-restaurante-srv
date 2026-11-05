@@ -15,10 +15,15 @@ Não versione credenciais. `DB_USERNAME` é um alias com precedência sobre `DB_
 ```powershell
 docker compose up -d
 cd application
+$bytes = New-Object byte[] 32
+$rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+try { $rng.GetBytes($bytes) } finally { $rng.Dispose() }
+$env:JWT_SECRET = [Convert]::ToBase64String($bytes)
 .\mvnw.cmd spring-boot:run
 ```
 
-O perfil padrão é `dev`. Exporte as mesmas credenciais do banco antes de executar;
+O perfil padrão é `dev`. `JWT_SECRET` é obrigatória também em desenvolvimento,
+sem chave padrão versionada. Exporte as mesmas credenciais do banco antes de executar;
 veja os exemplos completos no guia de estrutura. Para produção, use
 `SPRING_PROFILES_ACTIVE=prod`, `DB_URL`, `DB_USERNAME`/`DB_USER`, `DB_PASSWORD` e
 `JWT_SECRET` (Base64 de uma chave de ao menos 32 bytes).
@@ -29,8 +34,8 @@ O Flyway executa antes do Hibernate, que usa `ddl-auto=validate`;
 `open-in-view=false` mantém acesso ao banco dentro das transações.
 
 O seed legado cria `gerente@restaurante.com`; o inicializador converte a senha
-inicial em BCrypt de forma idempotente. A credencial de demonstração e a chave JWT
-local são exclusivas do desenvolvimento.
+inicial em BCrypt de forma idempotente. A credencial de demonstração é exclusiva
+do desenvolvimento. Use uma chave JWT própria para cada ambiente.
 
 ```powershell
 # Testes isolados, sem serviços externos:
