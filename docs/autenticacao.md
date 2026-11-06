@@ -43,7 +43,7 @@ Os tokens contêm `sub` com o login do funcionário, as authorities, `iat` e `ex
 
 ## Configuração
 
-Defina `JWT_SECRET` como uma chave aleatória de pelo menos 32 bytes codificada em Base64. `JWT_EXPIRATION` é opcional e representa milissegundos; o padrão é `1800000` (30 minutos).
+Defina `JWT_SECRET` como uma chave aleatória de pelo menos 32 bytes codificada em Base64. Ela é obrigatória nos perfis `dev` e `prod`, sem valor padrão; use uma chave própria para cada ambiente. `JWT_EXPIRATION` é opcional e representa milissegundos; o padrão é `1800000` (30 minutos).
 
 Exemplo para gerar uma chave local no PowerShell:
 
@@ -55,7 +55,7 @@ $env:JWT_SECRET = [Convert]::ToBase64String($bytes)
 $env:JWT_EXPIRATION = '1800000'
 ```
 
-Não grave a chave em código, arquivo versionado ou logs. `application.yml` lê o segredo de `JWT_SECRET`; o emissor (`JwtUtils`) e o filtro usam os mesmos bytes decodificados da chave para assinar e validar HS256.
+Não grave a chave em código, arquivo versionado ou logs. `application-dev.properties` e `application-prod.properties` leem o segredo de `JWT_SECRET`; o emissor (`JwtUtils`) e o filtro usam os mesmos bytes decodificados da chave para assinar e validar HS256.
 
 ## Integração e diagnóstico
 
