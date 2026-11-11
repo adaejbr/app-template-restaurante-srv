@@ -1,12 +1,15 @@
 package com.app.restaurante.srv.application.infra.repository;
 
 import com.app.restaurante.srv.application.core.entity.Funcionario;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface FuncionarioRepository extends JpaRepository<Funcionario, Integer> {
+public interface FuncionarioRepository extends JpaRepository<Funcionario, Integer>,
+        JpaSpecificationExecutor<Funcionario> {
+
     @EntityGraph(attributePaths = "perfil")
     Funcionario findByLogin(String login);
 
