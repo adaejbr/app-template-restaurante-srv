@@ -15,6 +15,6 @@ public class EstoqueFilter extends BaseFilter {
     @Schema(description = "Identificador específico do produto", example = "1")
     private Integer produtoId;
 
-    @Schema(description = "Filtrar por estoque máximo (ex: trazer itens abaixo de um limite para reposição)", example = "5")
+    @Schema(description = "Filtrar por estoque máximo para reposição", example = "5")
     private Integer quantidadeMax;
 }
