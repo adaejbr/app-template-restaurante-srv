@@ -4,11 +4,16 @@ import com.app.restaurante.srv.application.core.entity.Funcionario;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.stereotype.Repository;
+import java.util.Optional;
 
 @Repository
 public interface FuncionarioRepository extends JpaRepository<Funcionario, Integer> {
     @EntityGraph(attributePaths = "perfil")
     Funcionario findByLogin(String login);
+
+    @EntityGraph(attributePaths = {"perfil", "cargos", "cargos.cargo",
+        "cargos.cargo.permissoes", "cargos.cargo.permissoes.permissao"})
+    Optional<Funcionario> findDetalhadoById(Integer id);
 
     /**
      * CA da issue #7: método findByEmail.

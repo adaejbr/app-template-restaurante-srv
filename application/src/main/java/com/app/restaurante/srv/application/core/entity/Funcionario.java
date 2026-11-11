@@ -7,16 +7,23 @@ import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
-@Table(name = "funcionario")
+@Table(name = "funcionario",
+    indexes = @Index(name = "idx_funcionario_status", columnList = "status"))
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -40,4 +47,10 @@ public class Funcionario {
 
     @Column(nullable = false, length = 30)
     private String status;
+
+    @OneToMany(mappedBy = "funcionario", fetch = FetchType.LAZY)
+    @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<CargoFuncionario> cargos = new HashSet<>();
 }

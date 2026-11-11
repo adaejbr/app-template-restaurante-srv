@@ -9,11 +9,16 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Table(name = "cargo")
@@ -34,4 +39,10 @@ public class Cargo {
     @JoinColumn(name = "id_setor", nullable = false,
         foreignKey = @ForeignKey(name = "fk_cargo_setor"))
     private Setor setor;
+
+    @OneToMany(mappedBy = "cargo", fetch = FetchType.LAZY)
+    @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<PermissaoCargo> permissoes = new HashSet<>();
 }
