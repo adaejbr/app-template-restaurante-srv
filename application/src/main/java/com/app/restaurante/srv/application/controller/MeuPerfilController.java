@@ -9,6 +9,10 @@ import com.app.restaurante.srv.application.security.CustomUserDetails;
 import com.app.restaurante.srv.application.core.entity.Funcionario;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 import java.util.List;
 
@@ -24,14 +28,21 @@ public class MeuPerfilController {
 
     private final CargoFuncionarioRepository cargoFuncionarioRepository;
 
-    public MeuPerfilController(CargoFuncionarioRepository cargoFuncionarioRepository){
+    public MeuPerfilController(CargoFuncionarioRepository cargoFuncionarioRepository) {
         this.cargoFuncionarioRepository = cargoFuncionarioRepository;
     }
 
     @GetMapping
     @PreAuthorize("hasAuthority('ROLE_MEU_PERFIL_VIEW')")
     @Operation(summary = "Exibe os dados e permissões do usuário autenticado")
-    public MeuPerfilResponse getMeuPerfil() {  
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Dados do perfil e permissões do usuário autenticado",
+                content = @Content(mediaType = "application/json",
+                        schema = @Schema(implementation = MeuPerfilResponse.class))),
+        @ApiResponse(responseCode = "401", description = "Bearer token ausente ou inválido", content = @Content),
+        @ApiResponse(responseCode = "403", description = "Sem permissão para visualizar o perfil", content = @Content)
+    })
+    public MeuPerfilResponse getMeuPerfil() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Funcionario funcionario = userDetails.getFuncionario();
