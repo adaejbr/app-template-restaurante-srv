@@ -89,8 +89,12 @@ class AuthTests {
         String token = mapper.readTree(response).get("token").asString();
         mvc.perform(get("/api/usuarios/me").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value(EMAIL))
-                .andExpect(jsonPath("$.authorities").value(hasItem("ROLE_USER")));
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.nome").value("Gerente de Teste"))
+                .andExpect(jsonPath("$.email").value(EMAIL))
+                .andExpect(jsonPath("$.cargo").value("GERENTE"))
+                .andExpect(jsonPath("$.permissoes").value(hasItem("ROLE_USER")))
+                .andExpect(jsonPath("$.permissoes").value(hasItem("ROLE_MEU_PERFIL_VIEW")));
     }
 
     @Test
