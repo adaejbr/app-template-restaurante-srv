@@ -20,7 +20,7 @@ Resposta `200`:
   "token": "<JWT>",
   "userId": 1,
   "nome": "Gerente Padrao",
-  "cargo": "GERENTE"
+  "cargo": "Gerente"
 }
 ```
 
@@ -66,9 +66,9 @@ Não grave a chave em código, arquivo versionado ou logs. `application-dev.prop
 
 ## Senhas
 
-A migration inicial insere o gerente `gerente@restaurante.com` com a senha `admin123`. Ao iniciar a aplicação, o `DataInitializer` busca esse funcionário e salva um hash BCrypt de `admin123` se a senha ainda não estiver hasheada. A rotina executa em uma transação e preserva hashes BCrypt existentes, inclusive de senhas alteradas, nas próximas inicializações. Se o gerente não existir, a rotina não cria outro cadastro.
+A migration V2 cria o gerente `gerente@restaurante.com` com a senha `admin123`; a migration V6 substitui essa senha legada por um hash BCrypt pré-gerado. O `DataInitializer` permanece como compatibilidade para instalações antigas: só atualiza o gerente se o valor ainda não for BCrypt e preserva hashes existentes, inclusive de senhas alteradas. Se o gerente não existir, a rotina não cria outro cadastro.
 
-O login utiliza `BCryptPasswordEncoder` para validar a senha informada. A conversão automática se limita ao gerente do seed; outros funcionários precisam ter senhas BCrypt para autenticar. A senha inicial é destinada ao ambiente de desenvolvimento e deve ser alterada em ambientes reais.
+O login utiliza `BCryptPasswordEncoder` para validar a senha informada. O usuário administrador inicial usa `admin123` e tem cargo `Gerente`; o cargo `Garçom` recebe permissões para consultar produtos e operar pedidos. A senha inicial é destinada ao ambiente de desenvolvimento e deve ser alterada em ambientes reais. Outros funcionários precisam ter senhas BCrypt para autenticar.
 
 Para validar o J-11, inicie a aplicação com o seed, confira o hash na coluna `funcionario.senha` e faça login com `admin123`. Reinicie e confirme que o hash não mudou. Uma senha incorreta deve retornar `401`.
 

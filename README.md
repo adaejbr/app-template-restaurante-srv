@@ -33,9 +33,13 @@ As migrations ficam em `application/src/main/resources/db/migration` e usam
 O Flyway executa antes do Hibernate, que usa `ddl-auto=validate`;
 `open-in-view=false` mantém acesso ao banco dentro das transações.
 
-O seed legado cria `gerente@restaurante.com`; o inicializador converte a senha
-inicial em BCrypt de forma idempotente. A credencial de demonstração é exclusiva
-do desenvolvimento. Use uma chave JWT própria para cada ambiente.
+As migrations criam os cargos `Gerente` e `Garçom`, as permissões iniciais de
+funcionários, cargos, produtos, estoque, pedidos e relatórios e o administrador
+`gerente@restaurante.com`. A senha inicial é `admin123`, armazenada em BCrypt;
+use-a apenas em desenvolvimento e altere-a em ambientes reais. A migration
+converte a senha em texto plano do seed legado sem substituir senhas já alteradas.
+O inicializador mantém compatibilidade com instalações antigas. Use uma chave
+JWT própria para cada ambiente.
 
 ```powershell
 # Testes isolados, sem serviços externos:
