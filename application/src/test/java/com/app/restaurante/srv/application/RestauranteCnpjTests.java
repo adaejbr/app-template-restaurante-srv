@@ -24,6 +24,8 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import com.app.restaurante.srv.application.core.entity.Endereco;
+import com.app.restaurante.srv.application.infra.repository.EnderecoRepository;
 
 @ActiveProfiles("test")
 @SpringBootTest
@@ -39,18 +41,25 @@ class RestauranteCnpjTests {
     @Autowired
     protected RestauranteRepository repository;
 
+    @Autowired
+    protected EnderecoRepository enderecoRepository;
+
     @BeforeEach
     void fixtures() {
         // SQL deliberately models a legacy masked value that bypassed application callbacks.
         jdbc.update("INSERT INTO estado(id, nome) VALUES (901, 'Teste')");
         jdbc.update("INSERT INTO cidade(id, nome, id_estado) VALUES (901, 'Teste', 901)");
-        jdbc.update("INSERT INTO endereco(id, logradouro, numero, id_cidade) VALUES (901, 'Rua', '1', 901)");
+        jdbc.update("""
+            INSERT INTO endereco(id, logradouro, numero, id_cidade)
+            VALUES (901, 'Rua', '1', 901),
+                (902, 'Avenida', '2', 901)
+            """);
         jdbc.update("INSERT INTO configuracao(id) VALUES (901), (902)");
         jdbc.update("""
-                INSERT INTO restaurante(id, nome, cnpj, id_endereco, id_configuracao)
-                VALUES (901, 'Primeiro', '04252011000110', 901, 901),
-                       (902, 'Segundo', '11.222.333/0001-81', 901, 902)
-                """);
+            INSERT INTO restaurante(id, nome, cnpj, id_endereco, id_configuracao)
+            VALUES (901, 'Primeiro', '04252011000110', 901, 901),
+                (902, 'Segundo', '11.222.333/0001-81', 902, 902)
+            """);
     }
 
     @Test
@@ -116,13 +125,28 @@ class RestauranteCnpjTests {
     @Test
     void directRepositoryInsertAlsoNormalizesCnpj() {
         Restaurante template = repository.findById(901).orElseThrow();
-        // Use a separate config so the existing OneToOne unique constraint stays satisfied.
+
+        // Endereço exclusivo para o novo restaurante
+        Endereco endereco = Endereco.builder()
+                .logradouro("Avenida")
+                .numero("2")
+                .cidade(template.getEndereco().getCidade())
+                .build();
+
+        endereco = enderecoRepository.save(endereco);
+
         jdbc.update("INSERT INTO configuracao(id) VALUES (903)");
-        var created = Restaurante.builder().nome("Novo").cnpj("12.abc.345/01de-35")
-                .endereco(template.getEndereco())
-                .configuracao(new Configuracao()).build();
+
+        var created = Restaurante.builder()
+                .nome("Novo")
+                .cnpj("12.abc.345/01de-35")
+                .endereco(endereco)
+                .configuracao(new Configuracao())
+                .build();
+
         created.getConfiguracao().setId(903);
         repository.saveAndFlush(created);
+
         assertEquals("12ABC34501DE35", storedCnpj(created.getId()));
     }
 
