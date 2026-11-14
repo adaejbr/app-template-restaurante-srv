@@ -45,6 +45,9 @@ class RestauranteCnpjTests {
 
     @BeforeEach
     void fixtures() {
+        // Remove o restaurante padrão criado pelas migrations.
+        jdbc.update("DELETE FROM restaurante");
+
         // SQL deliberately models a legacy masked value that bypassed application callbacks.
         jdbc.update("INSERT INTO estado(id, nome) VALUES (901, 'Teste')");
         jdbc.update("INSERT INTO cidade(id, nome, id_estado) VALUES (901, 'Teste', 901)");
