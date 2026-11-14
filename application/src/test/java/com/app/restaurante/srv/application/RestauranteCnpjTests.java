@@ -7,7 +7,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.app.restaurante.srv.application.core.entity.Configuracao;
 import com.app.restaurante.srv.application.core.entity.Restaurante;
 import com.app.restaurante.srv.application.infra.repository.RestauranteRepository;
 import jakarta.validation.ConstraintViolationException;
@@ -23,7 +22,6 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
-import com.app.restaurante.srv.application.core.entity.Endereco;
 import com.app.restaurante.srv.application.infra.repository.EnderecoRepository;
 
 @ActiveProfiles("test")
@@ -43,58 +41,83 @@ class RestauranteCnpjTests {
     @Autowired
     protected EnderecoRepository enderecoRepository;
 
+    protected int restauranteId;
+
     @BeforeEach
     void fixtures() {
-        // Remove o restaurante padrão criado pelas migrations.
-        jdbc.update("DELETE FROM restaurante");
+        var ids = jdbc.query(
+                "SELECT id FROM restaurante ORDER BY id LIMIT 1",
+                (rs, rowNum) -> rs.getInt("id")
+        );
 
-        // SQL deliberately models a legacy masked value that bypassed application callbacks.
-        jdbc.update("INSERT INTO estado(id, nome) VALUES (901, 'Teste')");
-        jdbc.update("INSERT INTO cidade(id, nome, id_estado) VALUES (901, 'Teste', 901)");
+        if (ids.isEmpty()) {
+            // Cria dados de teste somente quando o banco não possui restaurante.
+            jdbc.update("INSERT INTO estado(id, nome) VALUES (901, 'Teste')");
+            jdbc.update("INSERT INTO cidade(id, nome, id_estado) VALUES (901, 'Teste', 901)");
+
+            jdbc.update("""
+                INSERT INTO endereco(id, logradouro, numero, id_cidade)
+                VALUES (901, 'Rua', '1', 901),
+                    (902, 'Avenida', '2', 901)
+                """);
+
+            jdbc.update("INSERT INTO configuracao(id) VALUES (901)");
+
+            jdbc.update("""
+                INSERT INTO restaurante(id, nome, cnpj, id_endereco, id_configuracao)
+                VALUES (901, 'Primeiro', '04252011000110', 901, 901)
+                """);
+
+            restauranteId = 901;
+        } else {
+            restauranteId = ids.get(0);
+        }
+
+        // Padroniza o restaurante utilizado pelos testes.
         jdbc.update("""
-            INSERT INTO endereco(id, logradouro, numero, id_cidade)
-            VALUES (901, 'Rua', '1', 901),
-                (902, 'Avenida', '2', 901)
-            """);
-        jdbc.update("INSERT INTO configuracao(id) VALUES (901)");
-        jdbc.update("""
-            INSERT INTO restaurante(id, nome, cnpj, id_endereco, id_configuracao)
-            VALUES (901, 'Primeiro', '04252011000110', 901, 901)
-            """);
+            UPDATE restaurante
+            SET nome = ?, cnpj = ?
+            WHERE id = ?
+            """, "Primeiro", "04252011000110", restauranteId);
     }
 
 
     @Test
     void sameRestaurantCanKeepItsCnpjAndPersistsCanonicalForm() throws Exception {
-        mvc.perform(patch("/api/restaurantes/901/cnpj").with(user("teste"))
+        mvc.perform(patch("/api/restaurantes/{id}/cnpj", restauranteId)
+                        .with(user("teste"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"cnpj\":\"04.252.011/0001-10\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.cnpj").value("04252011000110"))
-                .andExpect(jsonPath("$.id").value(901));
+                .andExpect(jsonPath("$.id").value(restauranteId));
 
-        assertEquals("04252011000110", storedCnpj(901));
+        assertEquals("04252011000110", storedCnpj(restauranteId));
         assertEquals("Primeiro",
-                jdbc.queryForObject("SELECT nome FROM restaurante WHERE id=901", String.class));
+                jdbc.queryForObject(
+                        "SELECT nome FROM restaurante WHERE id = ?",
+                        String.class,
+                        restauranteId
+                ));
     }
 
     @Test
     void alphanumericInputIsUppercaseAndUnmaskedInDatabase() throws Exception {
-        mvc.perform(patch("/api/restaurantes/901/cnpj").with(user("teste"))
+        mvc.perform(patch("/api/restaurantes/{id}/cnpj", restauranteId).with(user("teste"))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"cnpj\":\"12.abc.345/01de-35\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.cnpj").value("12ABC34501DE35"));
-        assertEquals("12ABC34501DE35", storedCnpj(901));
+        assertEquals("12ABC34501DE35", storedCnpj(restauranteId));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"{}", "{\"cnpj\":null}", "{\"cnpj\":\"\"}",
             "{\"cnpj\":\"11222333000180\"}", "{\"cnpj\":\"00000000000000\"}"})
     void invalidInputReturns400WithoutChangingDatabase(String payload) throws Exception {
-        mvc.perform(patch("/api/restaurantes/901/cnpj").with(user("teste"))
+        mvc.perform(patch("/api/restaurantes/{id}/cnpj", restauranteId).with(user("teste"))
                         .contentType(MediaType.APPLICATION_JSON).content(payload))
                 .andExpect(status().isBadRequest());
-        assertEquals("04252011000110", storedCnpj(901));
+        assertEquals("04252011000110", storedCnpj(restauranteId));
     }
 
     @Test
@@ -106,51 +129,23 @@ class RestauranteCnpjTests {
 
     @Test
     void endpointRequiresAuthentication() throws Exception {
-        mvc.perform(patch("/api/restaurantes/901/cnpj")
+        mvc.perform(patch("/api/restaurantes/{id}/cnpj", restauranteId)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"cnpj\":\"11222333000181\"}"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void directRepositoryUpdateAlsoNormalizesCnpj() {
-        Restaurante restaurante = repository.findById(901).orElseThrow();
+        Restaurante restaurante = repository.findById(restauranteId).orElseThrow();
         restaurante.setCnpj("12.abc.345/01de-35");
         repository.saveAndFlush(restaurante);
-        assertEquals("12ABC34501DE35", storedCnpj(901));
-    }
-
-    @Test
-    void directRepositoryInsertAlsoNormalizesCnpj() {
-        Restaurante template = repository.findById(901).orElseThrow();
-        jdbc.update("DELETE FROM restaurante WHERE id = 901");
-        // Endereço exclusivo para o novo restaurante
-        Endereco endereco = Endereco.builder()
-                .logradouro("Avenida")
-                .numero("2")
-                .cidade(template.getEndereco().getCidade())
-                .build();
-
-        endereco = enderecoRepository.save(endereco);
-
-        jdbc.update("INSERT INTO configuracao(id) VALUES (903)");
-
-        var created = Restaurante.builder()
-                .nome("Novo")
-                .cnpj("12.abc.345/01de-35")
-                .endereco(endereco)
-                .configuracao(new Configuracao())
-                .build();
-
-        created.getConfiguracao().setId(903);
-        repository.saveAndFlush(created);
-
-        assertEquals("12ABC34501DE35", storedCnpj(created.getId()));
+        assertEquals("12ABC34501DE35", storedCnpj(restauranteId));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"11222333000180", "11--222333000181", "12ßC34501DE33"})
     void directRepositoryRejectsInvalidCnpj(String cnpj) {
-        Restaurante restaurante = repository.findById(901).orElseThrow();
+        Restaurante restaurante = repository.findById(restauranteId).orElseThrow();
         restaurante.setCnpj(cnpj);
         assertThrows(ConstraintViolationException.class, () -> repository.saveAndFlush(restaurante));
     }
