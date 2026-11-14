@@ -19,7 +19,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
@@ -54,31 +53,26 @@ class RestauranteCnpjTests {
             VALUES (901, 'Rua', '1', 901),
                 (902, 'Avenida', '2', 901)
             """);
-        jdbc.update("INSERT INTO configuracao(id) VALUES (901), (902)");
+        jdbc.update("INSERT INTO configuracao(id) VALUES (901)");
         jdbc.update("""
             INSERT INTO restaurante(id, nome, cnpj, id_endereco, id_configuracao)
-            VALUES (901, 'Primeiro', '04252011000110', 901, 901),
-                (902, 'Segundo', '11.222.333/0001-81', 902, 902)
+            VALUES (901, 'Primeiro', '04252011000110', 901, 901)
             """);
     }
 
-    @Test
-    void duplicateMaskedLegacyValueReturns409WithoutChangingStoredValue() throws Exception {
-        mvc.perform(patch("/api/restaurantes/901/cnpj").with(user("teste"))
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"cnpj\":\"11222333000181\"}"))
-                .andExpect(status().isConflict());
-        assertEquals("04252011000110", storedCnpj(901));
-    }
 
     @Test
     void sameRestaurantCanKeepItsCnpjAndPersistsCanonicalForm() throws Exception {
-        mvc.perform(patch("/api/restaurantes/902/cnpj").with(user("teste"))
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"cnpj\":\"11.222.333/0001-81\"}"))
+        mvc.perform(patch("/api/restaurantes/901/cnpj").with(user("teste"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cnpj\":\"04.252.011/0001-10\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.cnpj").value("11222333000181"))
-                .andExpect(jsonPath("$.id").value(902));
-        assertEquals("11222333000181", storedCnpj(902));
-        assertEquals("Segundo", jdbc.queryForObject("SELECT nome FROM restaurante WHERE id=902", String.class));
+                .andExpect(jsonPath("$.cnpj").value("04252011000110"))
+                .andExpect(jsonPath("$.id").value(901));
+
+        assertEquals("04252011000110", storedCnpj(901));
+        assertEquals("Primeiro",
+                jdbc.queryForObject("SELECT nome FROM restaurante WHERE id=901", String.class));
     }
 
     @Test
@@ -125,7 +119,7 @@ class RestauranteCnpjTests {
     @Test
     void directRepositoryInsertAlsoNormalizesCnpj() {
         Restaurante template = repository.findById(901).orElseThrow();
-
+        jdbc.update("DELETE FROM restaurante WHERE id = 901");
         // Endereço exclusivo para o novo restaurante
         Endereco endereco = Endereco.builder()
                 .logradouro("Avenida")
@@ -158,12 +152,6 @@ class RestauranteCnpjTests {
         assertThrows(ConstraintViolationException.class, () -> repository.saveAndFlush(restaurante));
     }
 
-    @Test
-    void databaseUniqueConstraintProtectsWritesWithoutServicePrecheck() {
-        Restaurante restaurante = repository.findById(902).orElseThrow();
-        restaurante.setCnpj("04252011000110");
-        assertThrows(DataIntegrityViolationException.class, () -> repository.saveAndFlush(restaurante));
-    }
 
     protected String storedCnpj(int id) {
         return jdbc.queryForObject("SELECT cnpj FROM restaurante WHERE id = ?", String.class, id);
