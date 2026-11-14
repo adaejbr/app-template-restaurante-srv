@@ -3,10 +3,12 @@ package com.app.restaurante.srv.application.infra.repository;
 import java.util.Optional;
 import com.app.restaurante.srv.application.core.entity.Permissao;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface PermissaoRepository extends JpaRepository<Permissao, Integer> {
+public interface PermissaoRepository extends JpaRepository<Permissao, Integer>,
+        JpaSpecificationExecutor<Permissao> {
 
     // Mantido por compatibilidade com o que ja existia.
     Permissao findByNome(String nome);

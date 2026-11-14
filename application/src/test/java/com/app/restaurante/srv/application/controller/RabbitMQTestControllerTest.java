@@ -17,7 +17,9 @@ import com.app.restaurante.srv.application.rabbitmq.RabbitMQProducer;
 import com.app.restaurante.srv.application.security.CustomUserDetailsService;
 import com.app.restaurante.srv.application.security.JwtUtils;
 import com.app.restaurante.srv.application.security.SecurityConfig;
+import com.app.restaurante.srv.application.infra.repository.CargoFuncionarioRepository;
 import com.app.restaurante.srv.application.infra.repository.FuncionarioRepository;
+import com.app.restaurante.srv.application.infra.repository.PermissaoCargoRepository;
 
 @ActiveProfiles("test")
 @WebMvcTest(RabbitMQTestController.class)
@@ -32,6 +34,12 @@ class RabbitMQTestControllerTest {
 
     @MockitoBean
     private FuncionarioRepository funcionarioRepository;
+
+    @MockitoBean
+    private CargoFuncionarioRepository cargoFuncionarioRepository;
+
+    @MockitoBean
+    private PermissaoCargoRepository permissaoCargoRepository;
 
     @MockitoBean
     private JwtUtils jwtUtils;

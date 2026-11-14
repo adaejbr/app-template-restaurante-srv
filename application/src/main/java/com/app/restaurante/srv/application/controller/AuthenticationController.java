@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.app.restaurante.srv.application.core.entity.Funcionario;
 import com.app.restaurante.srv.application.dto.LoginRequest;
 import com.app.restaurante.srv.application.dto.LoginResponse;
-import com.app.restaurante.srv.application.infra.repository.CargoFuncionarioRepository;
 import com.app.restaurante.srv.application.security.CustomUserDetails;
 import com.app.restaurante.srv.application.security.JwtUtils;
 
@@ -31,13 +30,10 @@ import com.app.restaurante.srv.application.security.JwtUtils;
 public class AuthenticationController {
 
     private final AuthenticationManager authenticationManager;
-    private final CargoFuncionarioRepository cargoFuncionarioRepository;
     private final JwtUtils jwtUtils;
 
-    public AuthenticationController(AuthenticationManager authenticationManager,
-            CargoFuncionarioRepository cargoFuncionarioRepository, JwtUtils jwtUtils) {
+    public AuthenticationController(AuthenticationManager authenticationManager, JwtUtils jwtUtils) {
         this.authenticationManager = authenticationManager;
-        this.cargoFuncionarioRepository = cargoFuncionarioRepository;
         this.jwtUtils = jwtUtils;
     }
 
@@ -69,10 +65,7 @@ public class AuthenticationController {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Funcionario funcionario = userDetails.getFuncionario();
         String nome = funcionario.getPerfil().getNome();
-        String cargo = cargoFuncionarioRepository
-                .findFirstByIdFuncionarioAndStatus(funcionario.getId(), "ATIVO")
-                .map(cargoFuncionario -> cargoFuncionario.getCargo().getNome())
-                .orElse(null);
+        String cargo = userDetails.getCargo();
 
         return ResponseEntity.ok(new LoginResponse(
                 jwtUtils.generateToken(userDetails), funcionario.getId(), nome, cargo));
