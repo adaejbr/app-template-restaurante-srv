@@ -47,3 +47,5 @@ JWT própria para cada ambiente.
 # Acrescenta testes em MySQL exclusivo (configuração no guia):
 .\mvnw.cmd --batch-mode --no-transfer-progress -Pmysql-integration clean verify
 ```
+
+Consulte o [modelo de Perfil e Funcionário (FUNC-01)](docs/funcionarios-modelo.md) para relacionamentos, migrations e testes.
