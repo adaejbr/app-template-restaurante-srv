@@ -68,7 +68,10 @@ class FuncionarioModeloTests {
                 INSERT INTO cargo_funcionario(id_cargo, id_funcionario, status)
                 VALUES (951, 951, 'ATIVO'), (952, 951, 'INATIVO')
                 """);
-        jdbc.update("INSERT INTO permissao(id, nome) VALUES (951, 'ROLE_MEU_PERFIL_VIEW')");
+        jdbc.update("""
+                INSERT INTO permissao(id, chave, nome)
+                VALUES (951, 'ROLE_MEU_PERFIL_VIEW', 'Meu perfil')
+                """);
         jdbc.update("INSERT INTO permissao_cargo(id_permissao, id_cargo, situacao) VALUES (951, 951, 'ATIVA')");
     }
 
@@ -96,7 +99,7 @@ class FuncionarioModeloTests {
                 .filter(cargo -> "ATIVO".equals(cargo.getStatus())).findFirst().orElseThrow();
         assertEquals("GARCOM", vinculo.getCargo().getNome());
         assertEquals("ROLE_MEU_PERFIL_VIEW", vinculo.getCargo().getPermissoes().iterator().next()
-                .getPermissao().getNome());
+                .getPermissao().getChave());
         assertTrue(repository.findDetalhadoById(99999).isEmpty());
     }
 

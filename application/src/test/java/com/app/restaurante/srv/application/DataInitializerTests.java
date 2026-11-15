@@ -30,7 +30,7 @@ import com.app.restaurante.srv.application.infra.repository.FuncionarioRepositor
     "spring.flyway.enabled=false",
     "spring.jpa.defer-datasource-initialization=true",
     "spring.sql.init.mode=always",
-    "spring.sql.init.data-locations=classpath:db/migration/V2__seed_data.sql"
+    "spring.sql.init.data-locations=classpath:db/seed/funcionario_gerente.sql"
 })
 @AutoConfigureMockMvc
 @Transactional
