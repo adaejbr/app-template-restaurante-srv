@@ -1,12 +1,11 @@
 package com.ada.erp.usuario.exception;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import com.ada.erp.shared.exception.DuplicatedResourceException;
 
-@ResponseStatus(HttpStatus.CONFLICT)
-public class PermissaoEmUsoException extends RuntimeException {
+/** A permissao ainda esta vinculada a algum cargo (409). */
+public class PermissaoEmUsoException extends DuplicatedResourceException {
 
     public PermissaoEmUsoException() {
-        super("Permissão vinculada a um cargo não pode ser removida");
+        super("permissao.em.uso");
     }
 }

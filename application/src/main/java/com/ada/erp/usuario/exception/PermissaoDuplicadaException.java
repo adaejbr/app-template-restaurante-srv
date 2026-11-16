@@ -1,12 +1,11 @@
 package com.ada.erp.usuario.exception;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import com.ada.erp.shared.exception.DuplicatedResourceException;
 
-@ResponseStatus(HttpStatus.CONFLICT)
-public class PermissaoDuplicadaException extends RuntimeException {
+/** Ja existe permissao com a mesma chave (409). */
+public class PermissaoDuplicadaException extends DuplicatedResourceException {
 
     public PermissaoDuplicadaException() {
-        super("Chave de permissão já cadastrada");
+        super("permissao.duplicada");
     }
 }

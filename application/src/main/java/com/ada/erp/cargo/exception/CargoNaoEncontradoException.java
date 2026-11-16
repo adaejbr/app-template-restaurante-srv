@@ -1,12 +1,11 @@
 package com.ada.erp.cargo.exception;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import com.ada.erp.shared.exception.ResourceNotFoundException;
 
-@ResponseStatus(HttpStatus.NOT_FOUND)
-public class CargoNaoEncontradoException extends RuntimeException {
+/** Cargo pedido nao existe (404). */
+public class CargoNaoEncontradoException extends ResourceNotFoundException {
 
     public CargoNaoEncontradoException() {
-        super("Cargo não encontrado");
+        super("cargo.nao.encontrado");
     }
 }
