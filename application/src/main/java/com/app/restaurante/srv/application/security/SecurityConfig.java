@@ -23,6 +23,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableMethodSecurity 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @SuppressWarnings("null")
@@ -38,12 +39,19 @@ public class SecurityConfig {
                                 "/v3/api-docs/**")
                         .permitAll()
                         .anyRequest().authenticated())
-                .exceptionHandling(errors -> errors.authenticationEntryPoint((request, response, exception) -> {
-                    response.setCharacterEncoding("UTF-8");
-                    response.setContentType("application/json");
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.getWriter().write("{\"mensagem\":\"Não autenticado\"}");
-                }))
+                .exceptionHandling(errors -> errors
+                        .authenticationEntryPoint((request, response, exception) -> {
+                            response.setCharacterEncoding("UTF-8");
+                            response.setContentType("application/json");
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.getWriter().write("{\"mensagem\":\"Não autenticado\"}");
+                        })
+                        .accessDeniedHandler((request, response, exception) -> {
+                            response.setCharacterEncoding("UTF-8");
+                            response.setContentType("application/json");
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.getWriter().write("{\"mensagem\":\"Acesso negado\"}");
+                        }))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
