@@ -20,6 +20,15 @@ public interface PermissaoCargoRepository extends JpaRepository<PermissaoCargo, 
             """)
     List<String> findChavesAtivasByCargo(@Param("idCargo") Integer idCargo);
 
+    // Todos os vinculos do cargo, com ou sem situacao (CARGO-03): a substituicao
+    // precisa reaproveitar a linha existente em vez de duplicar a PK composta.
+    @Query("""
+            SELECT pc
+            FROM PermissaoCargo pc
+            WHERE pc.idCargo = :idCargo
+            """)
+    List<PermissaoCargo> findByCargo(@Param("idCargo") Integer idCargo);
+
     // Bloqueia exclusao de permissao vinculada a algum cargo (PERM-02).
     boolean existsByIdPermissao(Integer idPermissao);
 }
