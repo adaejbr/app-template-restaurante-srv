@@ -15,20 +15,14 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import java.util.HashSet;
-import java.util.Set;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
 import lombok.Setter;
+import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.hibernate.annotations.SQLRestriction;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 
 @Entity
 @Table(name = "cargo")
@@ -62,6 +56,7 @@ public class Cargo {
     private Set<PermissaoCargo> permissaoCargos = new HashSet<>();
 
     /** Projecao exigida pelo criterio de aceite da CARGO-01 (#65). */
+    @SuppressWarnings("null")
     public Set<Permissao> getPermissoes() {
         return permissaoCargos.stream()
                 .map(PermissaoCargo::getPermissao)
