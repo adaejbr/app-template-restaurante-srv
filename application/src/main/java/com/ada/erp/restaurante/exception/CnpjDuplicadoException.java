@@ -1,11 +1,11 @@
 package com.ada.erp.restaurante.exception;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import com.ada.erp.shared.exception.DuplicatedResourceException;
 
-@ResponseStatus(HttpStatus.CONFLICT)
-public class CnpjDuplicadoException extends RuntimeException {
+/** Ja existe outro restaurante com o mesmo CNPJ (409). */
+public class CnpjDuplicadoException extends DuplicatedResourceException {
+
     public CnpjDuplicadoException() {
-        super("CNPJ já cadastrado para outro restaurante");
+        super("cnpj.duplicado");
     }
 }

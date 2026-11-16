@@ -1,12 +1,11 @@
 package com.ada.erp.usuario.exception;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import com.ada.erp.shared.exception.BusinessRuleException;
 
-@ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
-public class ChaveImutavelException extends RuntimeException {
+/** A chave da permissao nao pode ser alterada depois de criada (422). */
+public class ChaveImutavelException extends BusinessRuleException {
 
     public ChaveImutavelException() {
-        super("A chave da permissão é imutável após a criação");
+        super("chave.imutavel");
     }
 }

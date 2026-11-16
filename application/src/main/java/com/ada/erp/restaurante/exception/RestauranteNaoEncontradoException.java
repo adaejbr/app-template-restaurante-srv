@@ -1,11 +1,11 @@
 package com.ada.erp.restaurante.exception;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import com.ada.erp.shared.exception.ResourceNotFoundException;
 
-@ResponseStatus(HttpStatus.NOT_FOUND)
-public class RestauranteNaoEncontradoException extends RuntimeException {
+/** Restaurante pedido nao existe (404). */
+public class RestauranteNaoEncontradoException extends ResourceNotFoundException {
+
     public RestauranteNaoEncontradoException() {
-        super("Restaurante não encontrado");
+        super("restaurante.nao.encontrado");
     }
 }
