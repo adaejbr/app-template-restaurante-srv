@@ -98,7 +98,7 @@ class FuncionarioModeloTests {
         var vinculo = funcionario.getCargos().stream()
                 .filter(cargo -> "ATIVO".equals(cargo.getStatus())).findFirst().orElseThrow();
         assertEquals("GARCOM", vinculo.getCargo().getNome());
-        assertEquals("ROLE_MEU_PERFIL_VIEW", vinculo.getCargo().getPermissoes().iterator().next()
+        assertEquals("ROLE_MEU_PERFIL_VIEW", vinculo.getCargo().getPermissaoCargos().iterator().next()
                 .getPermissao().getChave());
         assertTrue(repository.findDetalhadoById(99999).isEmpty());
     }

@@ -15,7 +15,7 @@ public interface FuncionarioRepository extends JpaRepository<Funcionario, Intege
     Funcionario findByLogin(String login);
 
     @EntityGraph(attributePaths = {"perfil", "cargos", "cargos.cargo",
-        "cargos.cargo.permissoes", "cargos.cargo.permissoes.permissao"})
+        "cargos.cargo.permissaoCargos", "cargos.cargo.permissaoCargos.permissao"})
     Optional<Funcionario> findDetalhadoById(Integer id);
 
     /**

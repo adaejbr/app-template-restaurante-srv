@@ -2,6 +2,7 @@ package com.app.restaurante.srv.application.infra.repository;
 
 import com.app.restaurante.srv.application.core.entity.CargoFuncionario;
 import com.app.restaurante.srv.application.core.entity.CargoFuncionarioId;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,4 +14,8 @@ public interface CargoFuncionarioRepository extends JpaRepository<CargoFuncionar
     /** Busca o cargo ativo de um funcionário (usado no login - task j-05). */
     @EntityGraph(attributePaths = "cargo")
     Optional<CargoFuncionario> findFirstByIdFuncionarioAndStatus(Integer idFuncionario, String status);
+
+    /** Consulta por nome do cargo e status (CARGO-01, #65). */
+    @EntityGraph(attributePaths = "cargo")
+    List<CargoFuncionario> findByCargoNomeAndStatus(String nome, String status);
 }
