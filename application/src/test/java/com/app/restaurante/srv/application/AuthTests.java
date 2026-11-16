@@ -101,7 +101,8 @@ class AuthTests {
                 .andExpect(jsonPath("$.email").value(EMAIL))
                 .andExpect(jsonPath("$.cargo").value("GERENTE"))
                 .andExpect(jsonPath("$.permissoes").value(hasItem("ROLE_USER")))
-                .andExpect(jsonPath("$.permissoes").value(hasItem("ROLE_MEU_PERFIL_VIEW")));
+                .andExpect(jsonPath("$.permissoes").value(hasItem("ROLE_MEU_PERFIL_VIEW")))
+                .andExpect(jsonPath("$.permissoes").value(hasItem("PERMISSOES_VISUALIZAR")));
     }
 
     @Test

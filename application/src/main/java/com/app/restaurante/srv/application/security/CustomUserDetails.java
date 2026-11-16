@@ -1,8 +1,9 @@
 package com.app.restaurante.srv.application.security;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,8 +18,9 @@ public class CustomUserDetails implements UserDetails {
     public CustomUserDetails(Funcionario funcionario, String cargo, Collection<String> permissoes) {
         this.funcionario = funcionario;
         this.cargo = cargo;
-        List<GrantedAuthority> carregadas = new ArrayList<>();
+        Set<GrantedAuthority> carregadas = new LinkedHashSet<>();
         carregadas.add(new SimpleGrantedAuthority("ROLE_USER"));
+        carregadas.add(new SimpleGrantedAuthority("ROLE_MEU_PERFIL_VIEW"));
         for (String permissao : permissoes) {
             carregadas.add(new SimpleGrantedAuthority(permissao));
         }
@@ -35,10 +37,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(
-            new SimpleGrantedAuthority("ROLE_USER"), 
-            new SimpleGrantedAuthority("ROLE_MEU_PERFIL_VIEW")
-        );
+        return authorities;
     }
 
     @Override
