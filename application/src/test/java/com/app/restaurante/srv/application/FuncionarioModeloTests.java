@@ -99,7 +99,7 @@ class FuncionarioModeloTests {
                 .filter(cargo -> "ATIVO".equals(cargo.getStatus())).findFirst().orElseThrow();
         assertEquals("GARCOM", vinculo.getCargo().getNome());
         assertEquals("ROLE_MEU_PERFIL_VIEW", vinculo.getCargo().getPermissoes().iterator().next()
-                .getPermissao().getChave());
+                .getChave());
         assertTrue(repository.findDetalhadoById(99999).isEmpty());
     }
 
