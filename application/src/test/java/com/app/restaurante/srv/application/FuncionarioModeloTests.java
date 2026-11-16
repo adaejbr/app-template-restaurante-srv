@@ -44,36 +44,57 @@ class FuncionarioModeloTests {
     @Autowired
     private CargoFuncionarioRepository cargos;
 
-    @BeforeEach
-    void fixtures() {
+        @BeforeEach
+        void fixtures() {
         jdbc.update("INSERT INTO estado(id, nome) VALUES (951, 'Teste FUNC-01')");
         jdbc.update("INSERT INTO cidade(id, nome, id_estado) VALUES (951, 'Teste', 951)");
         jdbc.update("INSERT INTO endereco(id, logradouro, numero, id_cidade) VALUES (951, 'Rua', '1', 951)");
-        jdbc.update("INSERT INTO configuracao(id) VALUES (951)");
-        jdbc.update("""
-                INSERT INTO restaurante(id, nome, cnpj, id_endereco, id_configuracao)
-                VALUES (951, 'Teste', '04252011000110', 951, 951)
-                """);
-        jdbc.update("INSERT INTO setor(id, nome, id_restaurante) VALUES (951, 'Sala', 951)");
+
+        Long restauranteId = jdbc.query(
+                "SELECT id FROM restaurante LIMIT 1",
+                rs -> rs.next() ? rs.getLong("id") : null
+        );
+
+        if (restauranteId == null) {
+                jdbc.update("INSERT INTO configuracao(id) VALUES (951)");
+
+                jdbc.update("""
+                        INSERT INTO restaurante(id, nome, cnpj, id_endereco, id_configuracao)
+                        VALUES (951, 'Teste', '04252011000110', 951, 951)
+                        """);
+
+                restauranteId = 951L;
+        }
+
+        jdbc.update(
+                "INSERT INTO setor(id, nome, id_restaurante) VALUES (951, 'Sala', ?)",
+                restauranteId
+        );
+
         jdbc.update("INSERT INTO cargo(id, nome, id_setor) VALUES (951, 'GARCOM', 951), (952, 'CAIXA', 951)");
+
         jdbc.update("""
                 INSERT INTO perfil(id, nome, cpf, id_endereco)
                 VALUES (951, 'Ana', '12345678901', 951), (952, 'Bia', '98765432100', 951)
                 """);
+
         jdbc.update("""
                 INSERT INTO funcionario(id, id_perfil, login, senha, status)
                 VALUES (951, 951, 'ana@teste.com', 'hash-de-teste', 'ATIVO')
                 """);
+
         jdbc.update("""
                 INSERT INTO cargo_funcionario(id_cargo, id_funcionario, status)
                 VALUES (951, 951, 'ATIVO'), (952, 951, 'INATIVO')
                 """);
+
         jdbc.update("""
                 INSERT INTO permissao(id, chave, nome)
                 VALUES (951, 'ROLE_MEU_PERFIL_VIEW', 'Meu perfil')
                 """);
+
         jdbc.update("INSERT INTO permissao_cargo(id_permissao, id_cargo, situacao) VALUES (951, 951, 'ATIVA')");
-    }
+        }
 
     @Test
     void persistsProfileEmployeeAndRoleUsingExistingRepositories() {
