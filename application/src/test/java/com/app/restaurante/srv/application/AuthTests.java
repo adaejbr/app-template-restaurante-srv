@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.List;
 import org.springframework.test.context.ActiveProfiles;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,7 @@ import com.app.restaurante.srv.application.core.entity.Funcionario;
 import com.app.restaurante.srv.application.core.entity.Perfil;
 import com.app.restaurante.srv.application.infra.repository.CargoFuncionarioRepository;
 import com.app.restaurante.srv.application.infra.repository.FuncionarioRepository;
+import com.app.restaurante.srv.application.infra.repository.PermissaoCargoRepository;
 import tools.jackson.databind.ObjectMapper;
 
 @ActiveProfiles("test")
@@ -54,6 +56,9 @@ class AuthTests {
     @MockitoBean
     private CargoFuncionarioRepository cargoFuncionarioRepository;
 
+    @MockitoBean
+    private PermissaoCargoRepository permissaoCargoRepository;
+
     @BeforeEach
     void prepareUsers() {
         String hash = passwordEncoder.encode(PASSWORD);
@@ -68,6 +73,8 @@ class AuthTests {
                         .status("ATIVO")
                         .cargo(Cargo.builder().nome("GERENTE").build())
                         .build()));
+        when(permissaoCargoRepository.findChavesAtivasByCargo(1))
+                .thenReturn(List.of("PERMISSOES_VISUALIZAR"));
     }
 
     @Test
@@ -90,7 +97,8 @@ class AuthTests {
         mvc.perform(get("/api/usuarios/me").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value(EMAIL))
-                .andExpect(jsonPath("$.authorities").value(hasItem("ROLE_USER")));
+                .andExpect(jsonPath("$.authorities").value(hasItem("ROLE_USER")))
+                .andExpect(jsonPath("$.authorities").value(hasItem("PERMISSOES_VISUALIZAR")));
     }
 
     @Test
