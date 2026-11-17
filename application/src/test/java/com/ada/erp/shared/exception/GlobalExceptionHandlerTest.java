@@ -113,6 +113,15 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.mensagem").value("Recurso não encontrado"));
     }
 
+    @Test
+    void metodoNaoSuportadoRetorna405EmVezDe500() throws Exception {
+        mvc.perform(post("/api/permissoes/1").with(autoridade("PERMISSOES_CRIAR"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.mensagem").value("Método não suportado"));
+    }
+
     private Integer idDaChave() {
         return repository.findByChave(CHAVE).orElseThrow().getId();
     }
