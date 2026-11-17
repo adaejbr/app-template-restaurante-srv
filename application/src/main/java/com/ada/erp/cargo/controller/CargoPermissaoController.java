@@ -1,6 +1,7 @@
 package com.ada.erp.cargo.controller;
 
 import java.util.List;
+import com.app.restaurante.srv.application.core.filter.ApiResponse;
 import com.ada.erp.cargo.dto.CargoPermissaoUpdateRequest;
 import com.ada.erp.cargo.service.CargoPermissaoService;
 import com.ada.erp.usuario.dto.PermissaoResponse;
@@ -28,8 +29,9 @@ public class CargoPermissaoController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('CARGOS_VISUALIZAR')")
-    public List<PermissaoResponse> buscarPermissoes(@PathVariable Integer idCargo) {
-        return service.buscarPermissoes(idCargo);
+    public ApiResponse<List<PermissaoResponse>> buscarPermissoes(@PathVariable Integer idCargo) {
+        return ApiResponse.success(service.buscarPermissoes(idCargo),
+                "/api/cargos/" + idCargo + "/permissoes");
     }
 
     @PutMapping
