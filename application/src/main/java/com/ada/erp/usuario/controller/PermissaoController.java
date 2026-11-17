@@ -1,6 +1,7 @@
 package com.ada.erp.usuario.controller;
 
 import java.util.List;
+import com.app.restaurante.srv.application.core.filter.ApiResponse;
 import com.ada.erp.usuario.dto.PermissaoCreateRequest;
 import com.ada.erp.usuario.dto.PermissaoResponse;
 import com.ada.erp.usuario.dto.PermissaoUpdateRequest;
@@ -32,28 +33,29 @@ public class PermissaoController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('PERMISSOES_VISUALIZAR')")
-    public List<PermissaoResponse> listar(@RequestParam(name = "q", required = false) String q) {
-        return service.listar(q);
+    public ApiResponse<List<PermissaoResponse>> listar(
+            @RequestParam(name = "q", required = false) String q) {
+        return ApiResponse.success(service.listar(q), "/api/permissoes");
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('PERMISSOES_VISUALIZAR')")
-    public PermissaoResponse buscar(@PathVariable Integer id) {
-        return service.buscar(id);
+    public ApiResponse<PermissaoResponse> buscar(@PathVariable Integer id) {
+        return ApiResponse.success(service.buscar(id), "/api/permissoes/" + id);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAuthority('PERMISSOES_CRIAR')")
-    public PermissaoResponse criar(@Valid @RequestBody PermissaoCreateRequest request) {
-        return service.criar(request);
+    public ApiResponse<PermissaoResponse> criar(@Valid @RequestBody PermissaoCreateRequest request) {
+        return ApiResponse.success(service.criar(request), "/api/permissoes");
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('PERMISSOES_EDITAR')")
-    public PermissaoResponse atualizar(@PathVariable Integer id,
+    public ApiResponse<PermissaoResponse> atualizar(@PathVariable Integer id,
             @Valid @RequestBody PermissaoUpdateRequest request) {
-        return service.atualizar(id, request);
+        return ApiResponse.success(service.atualizar(id, request), "/api/permissoes/" + id);
     }
 
     @DeleteMapping("/{id}")
