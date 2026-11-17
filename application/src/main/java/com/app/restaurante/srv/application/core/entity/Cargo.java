@@ -49,6 +49,10 @@ public class Cargo {
         foreignKey = @ForeignKey(name = "fk_cargo_setor"))
     private Setor setor;
 
+    @Column(nullable = false, length = 30, columnDefinition = "varchar(30) default 'ATIVO'")
+    @Builder.Default
+    private String status = "ATIVO";
+
     // A tabela de juncao guarda "situacao"; so as ATIVA contam para o cargo.
     @OneToMany(mappedBy = "cargo", fetch = FetchType.LAZY)
     @SQLRestriction("situacao = 'ATIVA'")
