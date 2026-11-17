@@ -1,7 +1,9 @@
 package com.app.restaurante.srv.application.core.entity;
 
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import jakarta.persistence.Column;
@@ -64,6 +66,8 @@ public class Cargo {
     public Set<Permissao> getPermissoes() {
         return permissaoCargos.stream()
                 .map(PermissaoCargo::getPermissao)
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(Permissao::getId, Comparator.nullsLast(Comparator.naturalOrder())))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 }
