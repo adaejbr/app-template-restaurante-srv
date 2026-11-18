@@ -75,9 +75,9 @@ class CargoPermissaoControllerTest {
         mvc.perform(get("/api/cargos/%d/permissoes".formatted(CARGO))
                         .with(autoridade("CARGOS_VISUALIZAR")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].chave").value("PEDIDOS_EDITAR"))
-                .andExpect(jsonPath("$[1].chave").value("PEDIDOS_EXCLUIR"));
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.data[0].chave").value("PEDIDOS_EDITAR"))
+                .andExpect(jsonPath("$.data[1].chave").value("PEDIDOS_EXCLUIR"));
     }
 
     @Test
@@ -91,8 +91,8 @@ class CargoPermissaoControllerTest {
         mvc.perform(get("/api/cargos/%d/permissoes".formatted(CARGO))
                         .with(autoridade("CARGOS_VISUALIZAR")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].chave").value("PEDIDOS_CANCELAR"));
+                .andExpect(jsonPath("$.data.length()").value(1))
+                .andExpect(jsonPath("$.data[0].chave").value("PEDIDOS_CANCELAR"));
     }
 
     @Test
@@ -106,7 +106,7 @@ class CargoPermissaoControllerTest {
         mvc.perform(get("/api/cargos/%d/permissoes".formatted(CARGO))
                         .with(autoridade("CARGOS_VISUALIZAR")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isEmpty());
+                .andExpect(jsonPath("$.data").isEmpty());
     }
 
     @Test

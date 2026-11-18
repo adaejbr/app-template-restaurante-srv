@@ -60,9 +60,9 @@ class PermissaoControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"chave\":\"PEDIDOS_EDITAR\",\"nome\":\"Editar pedido\"}"))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").isNumber())
-                .andExpect(jsonPath("$.chave").value("PEDIDOS_EDITAR"))
-                .andExpect(jsonPath("$.nome").value("Editar pedido"));
+                .andExpect(jsonPath("$.data.id").isNumber())
+                .andExpect(jsonPath("$.data.chave").value("PEDIDOS_EDITAR"))
+                .andExpect(jsonPath("$.data.nome").value("Editar pedido"));
     }
 
     @Test
@@ -96,18 +96,18 @@ class PermissaoControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nome\":\"Criar pedido novo\",\"descricao\":\"Atualizada\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.chave").value(CHAVE))
-                .andExpect(jsonPath("$.nome").value("Criar pedido novo"));
+                .andExpect(jsonPath("$.data.chave").value(CHAVE))
+                .andExpect(jsonPath("$.data.nome").value("Criar pedido novo"));
     }
 
     @Test
     void listarComFiltroQ() throws Exception {
         mvc.perform(get("/api/permissoes").param("q", "pedidos").with(autoridade("PERMISSOES_VISUALIZAR")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].chave").value(CHAVE));
+                .andExpect(jsonPath("$.data[0].chave").value(CHAVE));
         mvc.perform(get("/api/permissoes").param("q", "inexistente").with(autoridade("PERMISSOES_VISUALIZAR")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isEmpty());
+                .andExpect(jsonPath("$.data").isEmpty());
     }
 
     @Test
