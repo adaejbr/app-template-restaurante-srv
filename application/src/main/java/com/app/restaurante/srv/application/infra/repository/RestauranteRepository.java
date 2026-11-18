@@ -1,6 +1,7 @@
 package com.app.restaurante.srv.application.infra.repository;
 
 import com.app.restaurante.srv.application.core.entity.Restaurante;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.Query;
@@ -9,6 +10,9 @@ import org.springframework.data.repository.query.Param;
 @Repository
 public interface RestauranteRepository extends JpaRepository<Restaurante, Integer> {
     Restaurante findByCnpj(String cnpj);
+
+    // Restaurante singleton (REST-02): existe um unico registro, criado pelo seed.
+    Optional<Restaurante> findFirstByOrderByIdAsc();
 
     @Query("""
             select (count(r) > 0) from Restaurante r
