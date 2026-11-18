@@ -11,11 +11,15 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
+import org.springframework.web.ErrorResponse;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -97,13 +101,29 @@ public class GlobalExceptionHandler {
         return responder(HttpStatus.NOT_FOUND, "recurso.nao.encontrado");
     }
 
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<Map<String, String>> metodoNaoSuportado(
+            HttpRequestMethodNotSupportedException exception) {
+        return responder(HttpStatus.METHOD_NOT_ALLOWED, "metodo.nao.suportado");
+    }
+
+    /**
+     * Exceptions do proprio Spring MVC, como parametro ausente ou tipo nao
+     * suportado. O status definido pelo framework e preservado, em vez de
+     * cair no 500 do handler generico.
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> naoTratada(Exception exception) {
+        if (exception instanceof ErrorResponse erro) {
+            ProblemDetail corpo = erro.getBody();
+            String mensagem = corpo.getDetail() != null ? corpo.getDetail() : corpo.getTitle();
+            return responderComMensagem(erro.getStatusCode(), mensagem);
+        }
         ResponseStatus anotada = AnnotatedElementUtils
                 .findMergedAnnotation(exception.getClass(), ResponseStatus.class);
         if (anotada != null) {
             String mensagem = anotada.reason().isEmpty() ? exception.getMessage() : anotada.reason();
-            return responder(anotada.code(), mensagem);
+            return responderComMensagem(anotada.code(), mensagem);
         }
         log.error("Erro nao tratado: {}", exception.getMessage(), exception);
         return responder(HttpStatus.INTERNAL_SERVER_ERROR, "erro.interno");
@@ -111,7 +131,17 @@ public class GlobalExceptionHandler {
 
     /** Monta a resposta de erro; a mensagem ja chega resolvida pelo bundle. */
     private ResponseEntity<Map<String, String>> responder(HttpStatus status, String chave, Object... args) {
-        return ResponseEntity.status(status).body(Map.of("mensagem", resolver(chave, args)));
+        return responderComMensagem(status, resolver(chave, args));
+    }
+
+    private ResponseEntity<Map<String, String>> responderComMensagem(HttpStatusCode status, String mensagem) {
+        return ResponseEntity.status(status)
+                .body(Map.of("mensagem", mensagem == null ? motivoPadrao(status) : mensagem));
+    }
+
+    private String motivoPadrao(HttpStatusCode status) {
+        HttpStatus conhecido = HttpStatus.resolve(status.value());
+        return conhecido == null ? "Erro" : conhecido.getReasonPhrase();
     }
 
     private String resolver(String chave, Object[] args) {
