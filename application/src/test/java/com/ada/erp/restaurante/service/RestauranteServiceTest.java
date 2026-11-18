@@ -13,6 +13,7 @@ import java.util.Optional;
 import com.ada.erp.restaurante.exception.CnpjDuplicadoException;
 import com.ada.erp.restaurante.exception.CnpjInvalidoException;
 import com.ada.erp.restaurante.exception.RestauranteNaoEncontradoException;
+import com.ada.erp.restaurante.mapper.RestauranteMapper;
 import com.app.restaurante.srv.application.core.entity.Restaurante;
 import com.app.restaurante.srv.application.infra.repository.RestauranteRepository;
 import org.hibernate.exception.ConstraintViolationException;
@@ -28,11 +29,14 @@ class RestauranteServiceTest {
     @Mock
     private RestauranteRepository repository;
 
+    @Mock
+    private RestauranteMapper mapper;
+
     private RestauranteService service;
 
     @BeforeEach
     void setUp() {
-        service = new RestauranteService(repository);
+        service = new RestauranteService(repository, mapper);
     }
 
     @Test

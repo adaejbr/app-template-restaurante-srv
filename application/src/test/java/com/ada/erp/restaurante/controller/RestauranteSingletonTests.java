@@ -18,13 +18,16 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Cobre o criterio de aceite da REST-02 (#74): o restaurante e singleton, entao
- * GET responde 404 ate existir registro e o PUT atualiza sem criar outro.
+ * Cobre o criterio de aceite da REST-02 (#74) e da REST-04 (#76): o
+ * restaurante e singleton, entao GET responde 404 ate existir registro, o PUT
+ * atualiza sem criar outro e o acesso depende da chave do restaurante.
  */
 @ActiveProfiles("test")
 @SpringBootTest(classes = Application.class)
@@ -68,13 +71,13 @@ class RestauranteSingletonTests {
     void getRetorna404QuandoRestauranteNaoEstaConfigurado() throws Exception {
         jdbc.update("DELETE FROM restaurante");
 
-        mvc.perform(get("/api/restaurante").with(user("teste")))
+        mvc.perform(get("/api/restaurante").with(autoridade("RESTAURANTE_VISUALIZAR")))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void getRetorna200ComRestauranteConfigurado() throws Exception {
-        mvc.perform(get("/api/restaurante").with(user("teste")))
+        mvc.perform(get("/api/restaurante").with(autoridade("RESTAURANTE_VISUALIZAR")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(restauranteId))
                 .andExpect(jsonPath("$.nome").value("Primeiro"))
@@ -82,8 +85,18 @@ class RestauranteSingletonTests {
     }
 
     @Test
+    void getDevolveEnderecoEmbutido() throws Exception {
+        mvc.perform(get("/api/restaurante").with(autoridade("RESTAURANTE_VISUALIZAR")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.endereco.logradouro").value("Rua"))
+                .andExpect(jsonPath("$.endereco.numero").value("1"))
+                .andExpect(jsonPath("$.endereco.cidade").value("Teste"))
+                .andExpect(jsonPath("$.endereco.estado").value("Teste"));
+    }
+
+    @Test
     void putAtualizaSemCriarNovoRegistro() throws Exception {
-        mvc.perform(put("/api/restaurante").with(user("teste"))
+        mvc.perform(put("/api/restaurante").with(autoridade("RESTAURANTE_EDITAR"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"id":%d,"nome":"Renomeado","cnpj":"11.222.333/0001-81","telefone":"44332211"}
@@ -103,7 +116,7 @@ class RestauranteSingletonTests {
 
     @Test
     void putComIdDivergenteRetorna422() throws Exception {
-        mvc.perform(put("/api/restaurante").with(user("teste"))
+        mvc.perform(put("/api/restaurante").with(autoridade("RESTAURANTE_EDITAR"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"id":999999,"nome":"Outro","cnpj":"04252011000110"}
@@ -116,7 +129,7 @@ class RestauranteSingletonTests {
     void putSemRestauranteRetorna404() throws Exception {
         jdbc.update("DELETE FROM restaurante");
 
-        mvc.perform(put("/api/restaurante").with(user("teste"))
+        mvc.perform(put("/api/restaurante").with(autoridade("RESTAURANTE_EDITAR"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"id":%d,"nome":"Renomeado","cnpj":"04252011000110"}
@@ -126,7 +139,7 @@ class RestauranteSingletonTests {
 
     @Test
     void putComCnpjInvalidoRetorna400() throws Exception {
-        mvc.perform(put("/api/restaurante").with(user("teste"))
+        mvc.perform(put("/api/restaurante").with(autoridade("RESTAURANTE_EDITAR"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"id":%d,"nome":"Renomeado","cnpj":"11222333000180"}
@@ -139,7 +152,7 @@ class RestauranteSingletonTests {
 
     @Test
     void putSemNomeRetorna400() throws Exception {
-        mvc.perform(put("/api/restaurante").with(user("teste"))
+        mvc.perform(put("/api/restaurante").with(autoridade("RESTAURANTE_EDITAR"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"id":%d,"nome":"","cnpj":"04252011000110"}
@@ -151,7 +164,7 @@ class RestauranteSingletonTests {
     void putComCnpjDeOutroRestauranteRetorna409() throws Exception {
         criaSegundoRestaurante();
 
-        mvc.perform(put("/api/restaurante").with(user("teste"))
+        mvc.perform(put("/api/restaurante").with(autoridade("RESTAURANTE_EDITAR"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"id":%d,"nome":"Renomeado","cnpj":"11222333000181"}
@@ -161,11 +174,27 @@ class RestauranteSingletonTests {
 
     @Test
     void postNaoExisteRetorna405() throws Exception {
-        mvc.perform(post("/api/restaurante").with(user("teste"))
+        mvc.perform(post("/api/restaurante").with(autoridade("RESTAURANTE_EDITAR"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isMethodNotAllowed())
                 .andExpect(jsonPath("$.mensagem").value("Método não suportado"));
+    }
+
+    @Test
+    void getSemChaveDoRestauranteRetorna403() throws Exception {
+        mvc.perform(get("/api/restaurante").with(autoridade("OUTRA_PERMISSAO")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void putSemChaveDoRestauranteRetorna403() throws Exception {
+        mvc.perform(put("/api/restaurante").with(autoridade("RESTAURANTE_VISUALIZAR"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"id":%d,"nome":"Renomeado","cnpj":"04252011000110"}
+                                """.formatted(restauranteId)))
+                .andExpect(status().isForbidden());
     }
 
     /** Segundo restaurante so pra ter CNPJ em uso por outra linha. */
@@ -202,5 +231,9 @@ class RestauranteSingletonTests {
                 ? jdbc.queryForObject(sql, Integer.class)
                 : jdbc.queryForObject(sql, Integer.class, id);
         return total == null ? 0 : total;
+    }
+
+    private RequestPostProcessor autoridade(String permissao) {
+        return user("teste").authorities(new SimpleGrantedAuthority(permissao));
     }
 }

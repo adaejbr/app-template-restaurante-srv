@@ -7,6 +7,7 @@ import com.ada.erp.restaurante.exception.CnpjDuplicadoException;
 import com.ada.erp.restaurante.exception.CnpjInvalidoException;
 import com.ada.erp.restaurante.exception.IdDivergenteException;
 import com.ada.erp.restaurante.exception.RestauranteNaoEncontradoException;
+import com.ada.erp.restaurante.mapper.RestauranteMapper;
 import com.ada.erp.shared.validation.CnpjSupport;
 import com.app.restaurante.srv.application.core.entity.Restaurante;
 import com.app.restaurante.srv.application.infra.repository.RestauranteRepository;
@@ -22,15 +23,17 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class RestauranteService {
     private final RestauranteRepository repository;
+    private final RestauranteMapper mapper;
 
-    public RestauranteService(RestauranteRepository repository) {
+    public RestauranteService(RestauranteRepository repository, RestauranteMapper mapper) {
         this.repository = repository;
+        this.mapper = mapper;
     }
 
     /** Configuracao atual do restaurante. 404 enquanto ela nao existir. */
     @Transactional(readOnly = true)
     public RestauranteResponse get() {
-        return toResponse(buscarSingleton());
+        return mapper.toResponse(buscarSingleton());
     }
 
     /** Atualiza o registro existente. Nunca cria um restaurante novo. */
@@ -59,7 +62,7 @@ public class RestauranteService {
             }
             throw exception;
         }
-        return toResponse(restaurante);
+        return mapper.toResponse(restaurante);
     }
 
     @Transactional
@@ -88,11 +91,6 @@ public class RestauranteService {
     private Restaurante buscarSingleton() {
         return repository.findFirstByOrderByIdAsc()
                 .orElseThrow(RestauranteNaoEncontradoException::new);
-    }
-
-    private RestauranteResponse toResponse(Restaurante restaurante) {
-        return new RestauranteResponse(restaurante.getId(), restaurante.getNome(),
-                restaurante.getCnpj(), restaurante.getTelefone());
     }
 
     private boolean isCnpjConflict(Throwable exception) {
