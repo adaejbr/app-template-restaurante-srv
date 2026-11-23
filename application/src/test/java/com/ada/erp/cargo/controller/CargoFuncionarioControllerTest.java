@@ -74,13 +74,13 @@ class CargoFuncionarioControllerTest {
         mvc.perform(get("/api/cargos/%d".formatted(CARGO_ATIVO))
                         .with(autoridade("CARGOS_VISUALIZAR")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(CARGO_ATIVO))
-                .andExpect(jsonPath("$.nome").value("Gerente"))
-                .andExpect(jsonPath("$.idSetor").value(SETOR))
-                .andExpect(jsonPath("$.status").value("ATIVO"))
-                .andExpect(jsonPath("$.ativo").value(true))
-                .andExpect(jsonPath("$.permissoes.length()").value(1))
-                .andExpect(jsonPath("$.permissoes[0].chave").value("PEDIDOS_CRIAR"));
+                .andExpect(jsonPath("$.data.id").value(CARGO_ATIVO))
+                .andExpect(jsonPath("$.data.nome").value("Gerente"))
+                .andExpect(jsonPath("$.data.idSetor").value(SETOR))
+                .andExpect(jsonPath("$.data.status").value("ATIVO"))
+                .andExpect(jsonPath("$.data.ativo").value(true))
+                .andExpect(jsonPath("$.data.permissoes.length()").value(1))
+                .andExpect(jsonPath("$.data.permissoes[0].chave").value("PEDIDOS_CRIAR"));
     }
 
     @Test
@@ -99,9 +99,9 @@ class CargoFuncionarioControllerTest {
         mvc.perform(get("/api/cargos")
                         .with(autoridade("CARGOS_VISUALIZAR")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.id == 961)].nome").value("Gerente"))
-                .andExpect(jsonPath("$[?(@.id == 961)].permissoes[0].chave").value("PEDIDOS_CRIAR"))
-                .andExpect(jsonPath("$[?(@.id == 962)]").isEmpty());
+                .andExpect(jsonPath("$.data[?(@.id == 961)].nome").value("Gerente"))
+                .andExpect(jsonPath("$.data[?(@.id == 961)].permissoes[0].chave").value("PEDIDOS_CRIAR"))
+                .andExpect(jsonPath("$.data[?(@.id == 962)]").isEmpty());
     }
 
     @Test
@@ -113,14 +113,14 @@ class CargoFuncionarioControllerTest {
                                 {"nome":"Garçom","idSetor":961,"permissoes":[961,963]}
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").isNumber())
-                .andExpect(jsonPath("$.nome").value("Garçom"))
-                .andExpect(jsonPath("$.idSetor").value(SETOR))
-                .andExpect(jsonPath("$.status").value("ATIVO"))
-                .andExpect(jsonPath("$.ativo").value(true))
-                .andExpect(jsonPath("$.permissoes.length()").value(2))
-                .andExpect(jsonPath("$.permissoes[0].chave").value("PEDIDOS_CRIAR"))
-                .andExpect(jsonPath("$.permissoes[1].chave").value("PEDIDOS_EXCLUIR"));
+                .andExpect(jsonPath("$.data.id").isNumber())
+                .andExpect(jsonPath("$.data.nome").value("Garçom"))
+                .andExpect(jsonPath("$.data.idSetor").value(SETOR))
+                .andExpect(jsonPath("$.data.status").value("ATIVO"))
+                .andExpect(jsonPath("$.data.ativo").value(true))
+                .andExpect(jsonPath("$.data.permissoes.length()").value(2))
+                .andExpect(jsonPath("$.data.permissoes[0].chave").value("PEDIDOS_CRIAR"))
+                .andExpect(jsonPath("$.data.permissoes[1].chave").value("PEDIDOS_EXCLUIR"));
     }
 
     @Test
@@ -169,10 +169,10 @@ class CargoFuncionarioControllerTest {
                                 {"nome":"Gerente Geral","idSetor":961,"permissoes":[962,963]}
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome").value("Gerente Geral"))
-                .andExpect(jsonPath("$.permissoes.length()").value(2))
-                .andExpect(jsonPath("$.permissoes[0].chave").value("PEDIDOS_EDITAR"))
-                .andExpect(jsonPath("$.permissoes[1].chave").value("PEDIDOS_EXCLUIR"));
+                .andExpect(jsonPath("$.data.nome").value("Gerente Geral"))
+                .andExpect(jsonPath("$.data.permissoes.length()").value(2))
+                .andExpect(jsonPath("$.data.permissoes[0].chave").value("PEDIDOS_EDITAR"))
+                .andExpect(jsonPath("$.data.permissoes[1].chave").value("PEDIDOS_EXCLUIR"));
     }
 
     @Test
