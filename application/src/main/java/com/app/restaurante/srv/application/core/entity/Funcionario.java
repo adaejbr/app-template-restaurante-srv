@@ -20,6 +20,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Table(name = "funcionario",
@@ -48,9 +49,41 @@ public class Funcionario {
     @Column(nullable = false, length = 30)
     private String status;
 
+    /**
+     * Senha definida por terceiro (gerente); o funcionario deve criar uma senha
+     * pessoal no proximo acesso. Alterada apenas pelos metodos de senha abaixo.
+     */
+    @Column(name = "deve_alterar_senha", nullable = false)
+    @ColumnDefault("false")
+    @Builder.Default
+    private boolean deveAlterarSenha = false;
+
     @OneToMany(mappedBy = "funcionario", fetch = FetchType.LAZY)
     @Builder.Default
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Set<CargoFuncionario> cargos = new HashSet<>();
+
+    /**
+     * Senha definida por quem administra a conta (FUNC-05, cadastro e edicao
+     * por gerente): quem definiu conhece a senha, entao o funcionario deve
+     * troca-la no proximo acesso.
+     *
+     * @param hash senha ja codificada pelo {@code PasswordEncoder}
+     */
+    public void definirSenhaTemporaria(String hash) {
+        this.senha = hash;
+        this.deveAlterarSenha = true;
+    }
+
+    /**
+     * Senha escolhida pelo proprio funcionario (troca da propria senha, RF002):
+     * encerra a obrigacao de troca.
+     *
+     * @param hash senha ja codificada pelo {@code PasswordEncoder}
+     */
+    public void definirSenhaPessoal(String hash) {
+        this.senha = hash;
+        this.deveAlterarSenha = false;
+    }
 }

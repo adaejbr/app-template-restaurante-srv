@@ -46,7 +46,7 @@ public class AuthenticationController {
                         schema = @Schema(implementation = LoginResponse.class),
                         examples = @ExampleObject(value =
                                 "{\"token\":\"eyJ...\",\"userId\":1,\"nome\":\"Gerente Padrao\","
-                                        + "\"cargo\":\"GERENTE\"}"))),
+                                        + "\"cargo\":\"GERENTE\",\"deveAlterarSenha\":false}"))),
         @ApiResponse(responseCode = "400", description = "E-mail ou senha ausente/inválido",
                 content = @Content),
         @ApiResponse(responseCode = "401", description = "Credenciais inválidas ou funcionário inativo",
@@ -68,6 +68,7 @@ public class AuthenticationController {
         String cargo = userDetails.getCargo();
 
         return ResponseEntity.ok(new LoginResponse(
-                jwtUtils.generateToken(userDetails), funcionario.getId(), nome, cargo));
+                jwtUtils.generateToken(userDetails), funcionario.getId(), nome, cargo,
+                funcionario.isDeveAlterarSenha()));
     }
 }
