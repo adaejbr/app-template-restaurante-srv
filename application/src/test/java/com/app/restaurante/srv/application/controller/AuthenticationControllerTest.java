@@ -79,10 +79,35 @@ class AuthenticationControllerTest {
                 .andExpect(jsonPath("$.nome").value("Gerente de Teste"))
                 .andExpect(jsonPath("$.cargo").hasJsonPath())
                 .andExpect(jsonPath("$.cargo").value((Object) null))
+                .andExpect(jsonPath("$.deveAlterarSenha").value(false))
                 .andExpect(jsonPath("$.senha").doesNotExist());
 
         verify(funcionarioRepository).findByLogin(EMAIL);
         verify(cargoFuncionarioRepository).findFirstByIdFuncionarioAndStatus(1, "ATIVO");
+    }
+
+    // FUNC-05 (#67): senha definida por gerente sinaliza ao front a troca obrigatoria.
+    @Test
+    void temporaryPasswordIsFlaggedInLoginResponse() throws Exception {
+        Funcionario funcionario = Funcionario.builder()
+                .id(2)
+                .perfil(Perfil.builder().nome("Garcom de Teste").build())
+                .login(EMAIL)
+                .status("ATIVO")
+                .build();
+        funcionario.definirSenhaTemporaria(passwordEncoder.encode(PASSWORD));
+        when(funcionarioRepository.findByLogin(EMAIL)).thenReturn(funcionario);
+        when(cargoFuncionarioRepository.findFirstByIdFuncionarioAndStatus(2, "ATIVO"))
+                .thenReturn(Optional.empty());
+        when(jwtUtils.generateToken(any())).thenReturn("jwt-de-teste");
+
+        mvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"gerente@restaurante.com","senha":"senha-teste"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.deveAlterarSenha").value(true));
     }
 
     @Test
