@@ -1,7 +1,9 @@
 package com.app.restaurante.srv.application.core.entity;
 
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import jakarta.persistence.Column;
@@ -49,6 +51,10 @@ public class Cargo {
         foreignKey = @ForeignKey(name = "fk_cargo_setor"))
     private Setor setor;
 
+    @Column(nullable = false, length = 30, columnDefinition = "varchar(30) default 'ATIVO'")
+    @Builder.Default
+    private String status = "ATIVO";
+
     // A tabela de juncao guarda "situacao"; so as ATIVA contam para o cargo.
     @OneToMany(mappedBy = "cargo", fetch = FetchType.LAZY)
     @SQLRestriction("situacao = 'ATIVA'")
@@ -60,6 +66,8 @@ public class Cargo {
     public Set<Permissao> getPermissoes() {
         return permissaoCargos.stream()
                 .map(PermissaoCargo::getPermissao)
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(Permissao::getId, Comparator.nullsLast(Comparator.naturalOrder())))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 }

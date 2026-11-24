@@ -25,6 +25,7 @@ public interface PermissaoCargoRepository extends JpaRepository<PermissaoCargo, 
     @Query("""
             SELECT pc
             FROM PermissaoCargo pc
+            JOIN FETCH pc.permissao
             WHERE pc.idCargo = :idCargo
             """)
     List<PermissaoCargo> findByCargo(@Param("idCargo") Integer idCargo);

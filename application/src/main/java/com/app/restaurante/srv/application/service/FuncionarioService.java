@@ -4,6 +4,7 @@ import com.ada.erp.shared.auditoria.Auditable;
 import com.ada.erp.usuario.exception.AutoAlteracaoSenhaNegadaException;
 import com.ada.erp.usuario.exception.FuncionarioNaoEncontradoException;
 import com.app.restaurante.srv.application.core.entity.Funcionario;
+import java.util.List;
 import com.app.restaurante.srv.application.core.filter.PageResponse;
 import com.app.restaurante.srv.application.core.filter.PageableFactory;
 import com.app.restaurante.srv.application.dto.FuncionarioFilter;
@@ -11,8 +12,10 @@ import com.app.restaurante.srv.application.dto.FuncionarioListResponse;
 import com.app.restaurante.srv.application.infra.repository.FuncionarioRepository;
 import com.app.restaurante.srv.application.infra.specification.FuncionarioSpecification;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class FuncionarioService {
+
+    private static final Sort DEFAULT_SORT = Sort.by(Sort.Direction.ASC, "perfil.nome");
 
     private final FuncionarioRepository funcionarioRepository;
     private final PasswordEncoder passwordEncoder;
@@ -32,7 +37,7 @@ public class FuncionarioService {
 
     @Transactional(readOnly = true)
     public PageResponse<FuncionarioListResponse> listar(FuncionarioFilter filter) {
-        Pageable pageable = PageableFactory.from(filter);
+        Pageable pageable = resolvePageable(filter);
         Page<FuncionarioListResponse> page = funcionarioRepository
                 .findAll(FuncionarioSpecification.from(filter), pageable)
                 .map(FuncionarioListResponse::from);
@@ -63,5 +68,26 @@ public class FuncionarioService {
         }
         funcionario.definirSenhaTemporaria(passwordEncoder.encode(novaSenha));
         return funcionarioRepository.save(funcionario);
+    }
+  
+    private Pageable resolvePageable(FuncionarioFilter filter) {
+        Pageable base = PageableFactory.from(filter);
+        Sort sort = base.getSort();
+        if (sort.isUnsorted()) {
+            return PageRequest.of(base.getPageNumber(), base.getPageSize(), DEFAULT_SORT);
+        }
+        List<Sort.Order> mappedOrders = sort.stream()
+                .map(order -> order.withProperty(mapSortProperty(order.getProperty())))
+                .toList();
+        return PageRequest.of(base.getPageNumber(), base.getPageSize(), Sort.by(mappedOrders));
+    }
+
+    private String mapSortProperty(String property) {
+        return switch (property) {
+            case "nome" -> "perfil.nome";
+            case "cpf" -> "perfil.cpf";
+            case "email" -> "login";
+            default -> property;
+        };
     }
 }

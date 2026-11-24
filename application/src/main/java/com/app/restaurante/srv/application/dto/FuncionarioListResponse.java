@@ -1,5 +1,7 @@
 package com.app.restaurante.srv.application.dto;
 
+import java.util.Comparator;
+import com.app.restaurante.srv.application.core.entity.CargoFuncionario;
 import com.app.restaurante.srv.application.core.entity.Funcionario;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -11,14 +13,20 @@ public record FuncionarioListResponse(
         @Schema(example = "1")
         Integer id,
 
-        @Schema(example = "gerente@restaurante.com")
-        String login,
-
         @Schema(example = "Gerente Padrão")
         String nome,
 
-        @Schema(example = "(45) 99999-9999")
-        String telefone,
+        @Schema(example = "12345678900")
+        String cpf,
+
+        @Schema(example = "gerente@restaurante.com")
+        String email,
+
+        @Schema(example = "1")
+        Integer cargoId,
+
+        @Schema(example = "GERENTE")
+        String cargoNome,
 
         @Schema(example = "ATIVO")
         String status) {
@@ -28,12 +36,26 @@ public record FuncionarioListResponse(
             return null;
         }
         String nome = funcionario.getPerfil() != null ? funcionario.getPerfil().getNome() : null;
-        String telefone = funcionario.getPerfil() != null ? funcionario.getPerfil().getTelefone() : null;
+        String cpf = funcionario.getPerfil() != null ? funcionario.getPerfil().getCpf() : null;
+        CargoFuncionario cargoAtivo = funcionario.getCargos() != null
+                ? funcionario.getCargos().stream()
+                        .filter(cf -> "ATIVO".equalsIgnoreCase(cf.getStatus()))
+                        .min(Comparator.comparing(
+                                CargoFuncionario::getIdCargo,
+                                Comparator.nullsLast(Comparator.naturalOrder())))
+                        .orElse(null)
+                : null;
+        Integer cargoId = cargoAtivo != null ? cargoAtivo.getIdCargo() : null;
+        String cargoNome = (cargoAtivo != null && cargoAtivo.getCargo() != null)
+                ? cargoAtivo.getCargo().getNome()
+                : null;
         return new FuncionarioListResponse(
                 funcionario.getId(),
-                funcionario.getLogin(),
                 nome,
-                telefone,
+                cpf,
+                funcionario.getLogin(),
+                cargoId,
+                cargoNome,
                 funcionario.getStatus());
     }
 }
