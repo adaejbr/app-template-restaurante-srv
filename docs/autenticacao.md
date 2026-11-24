@@ -72,6 +72,29 @@ O login utiliza `BCryptPasswordEncoder` para validar a senha informada. O usuár
 
 Para validar o J-11, inicie a aplicação com o seed, confira o hash na coluna `funcionario.senha` e faça login com `admin123`. Reinicie e confirme que o hash não mudou. Uma senha incorreta deve retornar `401`.
 
+## Alteração de senha por gerente (FUNC-05)
+
+`PATCH /api/funcionarios/{id}/senha` permite que quem tem a permissão `FUNCIONARIOS_EDITAR` defina uma senha temporária para **outro** funcionário, sem a senha atual dele:
+
+```json
+{ "novaSenha": "Cozinha-Temporaria-2026" }
+```
+
+| Situação | Resposta |
+| --- | --- |
+| Senha alterada | `204` sem corpo |
+| Nova senha ausente ou fraca | `400` com a regra violada |
+| Sem token | `401` |
+| Sem `FUNCIONARIOS_EDITAR` ou `{id}` igual ao usuário autenticado | `403` |
+| Funcionário inexistente | `404` |
+
+Regras de segurança:
+
+- **Sem auto-bypass:** o endpoint recusa a alteração da própria senha, mesmo para gerente. A troca da própria senha exige a senha atual e pertence ao endpoint do próprio perfil (RF002, #42).
+- **Força da senha:** `@SenhaForte` (`com.ada.erp.shared.validation`) segue o OWASP ASVS V2.1: de 8 a 64 caracteres, espaços permitidos, sem regras de composição obrigatórias e bloqueio de senhas comuns ou formadas por um único caractere repetido. O limite de 72 bytes em UTF-8 existe por causa do BCrypt. A anotação é reutilizável no cadastro, na edição e na troca da própria senha.
+- **Troca obrigatória:** a senha é gravada com `PasswordEncoder` e a coluna `funcionario.deve_alterar_senha` (V12) passa a `true`, porque o gerente conhece a senha. O login devolve `deveAlterarSenha` para o front levar o usuário à troca. As transições ficam em `Funcionario.definirSenhaTemporaria` (senha definida por terceiro) e `Funcionario.definirSenhaPessoal` (senha escolhida pelo próprio funcionário, que zera a flag). O bloqueio das demais rotas enquanto a flag estiver ativa é uma etapa posterior.
+- **Auditoria:** o service é anotado com `@Auditable(acao = "PASSWORD_CHANGE")`; o log registra a conta afetada (`entidadeId`) e quem alterou (`usuario`), nunca a senha ou o hash. A persistência em `audit_log` depende da AUDIT-01/02 (#53, #58).
+
 ## CORS
 
 O CORS permite a origem `http://localhost:4200`, métodos `GET`, `POST`, `PUT`, `PATCH`, `DELETE` e `OPTIONS`, além dos cabeçalhos `Accept`, `Authorization` e `Content-Type`. A autenticação usa token Bearer, não cookies de sessão.
