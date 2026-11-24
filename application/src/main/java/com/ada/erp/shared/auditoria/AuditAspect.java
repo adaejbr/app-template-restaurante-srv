@@ -7,6 +7,8 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 /**
@@ -25,8 +27,14 @@ public class AuditAspect {
         String acao = auditable.acao().isBlank()
                 ? joinPoint.getSignature().toShortString()
                 : auditable.acao();
-        LOG.info("auditoria acao={} entidadeId={}", acao, extrairId(resultado));
+        LOG.info("auditoria acao={} entidadeId={} usuario={}", acao, extrairId(resultado), autor());
         return resultado;
+    }
+
+    /** Login de quem executou a acao; a persistencia com id e IP fica com a AUDIT-02. */
+    private String autor() {
+        Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
+        return autenticacao == null ? null : autenticacao.getName();
     }
 
     private Object extrairId(Object resultado) {
