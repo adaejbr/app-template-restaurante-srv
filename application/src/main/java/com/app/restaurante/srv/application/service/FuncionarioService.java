@@ -23,7 +23,9 @@ import com.app.restaurante.srv.application.infra.specification.FuncionarioSpecif
 import com.app.restaurante.srv.application.mapper.FuncionarioMapper;
 import java.util.List;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +38,7 @@ public class FuncionarioService {
 
     private static final String STATUS_ATIVO = "ATIVO";
     private static final String STATUS_INATIVO = "INATIVO";
+    private static final Sort DEFAULT_SORT = Sort.by(Sort.Direction.ASC, "perfil.nome");
 
     private final FuncionarioRepository funcionarioRepository;
     private final PerfilRepository perfilRepository;
@@ -61,11 +64,32 @@ public class FuncionarioService {
 
     @Transactional(readOnly = true)
     public PageResponse<FuncionarioListResponse> listar(FuncionarioFilter filter) {
-        Pageable pageable = PageableFactory.from(filter);
+        Pageable pageable = resolvePageable(filter);
         Page<FuncionarioListResponse> page = funcionarioRepository
                 .findAll(FuncionarioSpecification.from(filter), pageable)
                 .map(FuncionarioListResponse::from);
         return PageResponse.from(page);
+    }
+
+    private Pageable resolvePageable(FuncionarioFilter filter) {
+        Pageable base = PageableFactory.from(filter);
+        Sort sort = base.getSort();
+        if (sort.isUnsorted()) {
+            return PageRequest.of(base.getPageNumber(), base.getPageSize(), DEFAULT_SORT);
+        }
+        List<Sort.Order> mappedOrders = sort.stream()
+                .map(order -> order.withProperty(mapSortProperty(order.getProperty())))
+                .toList();
+        return PageRequest.of(base.getPageNumber(), base.getPageSize(), Sort.by(mappedOrders));
+    }
+
+    private String mapSortProperty(String property) {
+        return switch (property) {
+            case "nome" -> "perfil.nome";
+            case "cpf" -> "perfil.cpf";
+            case "email" -> "login";
+            default -> property;
+        };
     }
 
     /**
