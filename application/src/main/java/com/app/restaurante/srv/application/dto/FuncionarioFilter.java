@@ -14,4 +14,7 @@ public class FuncionarioFilter extends BaseFilter {
 
     @Schema(description = "Status do funcionário (ex: ATIVO, INATIVO)", example = "ATIVO")
     private String status;
+
+    @Schema(description = "ID do cargo do funcionário", example = "2")
+    private Integer cargoId;
 }
