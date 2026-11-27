@@ -130,6 +130,20 @@ public class FuncionarioService {
         return funcionarioMapper.toResponse(funcionario, cargo);
     }
 
+    /**
+     * Realiza a exclusão lógica de um funcionário (FUNC-04, #71),
+     * alterando seu status para INATIVO sem remover o registro do banco.
+     */
+    @Transactional
+    @Auditable(acao = "FUNCIONARIO_DESATIVAR")
+    public void desativar(Integer id) {
+        Funcionario funcionario = funcionarioRepository.findById(id)
+                .orElseThrow(FuncionarioNaoEncontradoException::new);
+
+        funcionario.setStatus(STATUS_INATIVO);
+        funcionarioRepository.save(funcionario);
+    }
+
     private void validarCpfUnico(String cpf, Integer idPerfilAtual) {
         Perfil existente = perfilRepository.findByCpf(cpf);
         if (existente != null && !existente.getId().equals(idPerfilAtual)) {
