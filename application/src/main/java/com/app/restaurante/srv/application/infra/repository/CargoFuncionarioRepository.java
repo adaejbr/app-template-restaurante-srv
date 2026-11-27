@@ -18,4 +18,8 @@ public interface CargoFuncionarioRepository extends JpaRepository<CargoFuncionar
     /** Consulta por nome do cargo e status (CARGO-01, #65). */
     @EntityGraph(attributePaths = "cargo")
     List<CargoFuncionario> findByCargoNomeAndStatus(String nome, String status);
+
+    /** Lista todos os vínculos de cargo de um funcionário (ativos e inativos). */
+    @EntityGraph(attributePaths = "cargo")
+    List<CargoFuncionario> findByIdFuncionario(Integer idFuncionario);
 }
