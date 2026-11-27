@@ -22,6 +22,7 @@ public final class FuncionarioSpecification {
     public static Specification<Funcionario> from(FuncionarioFilter filter) {
         SpecificationBuilder<Funcionario> builder = new SpecificationBuilder<>();
         if (filter == null) {
+            builder.withEqual("status", "ATIVO");
             return builder.build();
         }
 
@@ -50,7 +51,10 @@ public final class FuncionarioSpecification {
             });
         }
 
-        builder.withEqual("status", filter.getStatus());
+        String status = StringUtils.hasText(filter.getStatus())
+                ? filter.getStatus().trim()
+                : "ATIVO";
+        builder.withEqual("status", status);
 
         return builder.build();
     }
