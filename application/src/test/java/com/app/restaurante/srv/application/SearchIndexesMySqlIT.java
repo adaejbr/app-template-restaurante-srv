@@ -68,6 +68,11 @@ class SearchIndexesMySqlIT {
         cleanup();
     }
 
+    private void recursiveInsert(String sql, Object... args) {
+        jdbc.execute("SET SESSION cte_max_recursion_depth = " + SEED_SIZE);
+        jdbc.update(sql, args);
+    }
+
     private void cleanup() {
         // Ordem FK: dependentes antes dos referenciados. Apenas linhas BUSCA02_.
         jdbc.update("DELETE pi FROM pedido_item pi "
@@ -117,7 +122,7 @@ class SearchIndexesMySqlIT {
         estadoId = jdbc.queryForObject(
                 "SELECT id FROM estado WHERE nome = ?", Integer.class, MARKER + "ESTADO");
 
-        jdbc.update(
+        recursiveInsert(
                 "INSERT INTO cidade (nome, id_estado) "
                 + "WITH RECURSIVE seq AS ("
                 + "  SELECT 1 AS n "
@@ -127,7 +132,7 @@ class SearchIndexesMySqlIT {
                 + "SELECT CONCAT(?, LPAD(n, 5, '0')), ? FROM seq",
                 SEED_SIZE, MARKER + "CIDADE_", estadoId);
 
-        jdbc.update(
+        recursiveInsert(
                 "INSERT INTO endereco (logradouro, numero, referencia, id_cidade) "
                 + "WITH RECURSIVE seq AS ("
                 + "  SELECT 1 AS n "
@@ -147,7 +152,7 @@ class SearchIndexesMySqlIT {
     }
 
     private void seedPerfisClientes() {
-        jdbc.update(
+        recursiveInsert(
                 "INSERT INTO perfil (nome, cpf, telefone, id_endereco) "
                 + "WITH RECURSIVE seq AS ("
                 + "  SELECT 1 AS n "
@@ -175,7 +180,7 @@ class SearchIndexesMySqlIT {
         Integer setorId = jdbc.queryForObject(
                 "SELECT id FROM setor WHERE nome = ?", Integer.class, MARKER + "SETOR");
 
-        jdbc.update(
+        recursiveInsert(
                 "INSERT INTO cargo (nome, id_setor) "
                 + "WITH RECURSIVE seq AS ("
                 + "  SELECT 1 AS n "
@@ -187,7 +192,7 @@ class SearchIndexesMySqlIT {
     }
 
     private void seedMesas() {
-        jdbc.update(
+        recursiveInsert(
                 "INSERT INTO mesa (identificacao, area, status, id_restaurante) "
                 + "WITH RECURSIVE seq AS ("
                 + "  SELECT 1 AS n "
@@ -203,7 +208,7 @@ class SearchIndexesMySqlIT {
     }
 
     private void seedComandas() {
-        jdbc.update(
+        recursiveInsert(
                 "INSERT INTO comanda (identificacao, status, id_restaurante) "
                 + "WITH RECURSIVE seq AS ("
                 + "  SELECT 1 AS n "
@@ -227,7 +232,7 @@ class SearchIndexesMySqlIT {
         Integer marcaId = jdbc.queryForObject(
                 "SELECT id FROM marca_produto WHERE nome = ?", Integer.class, MARKER + "MARCA");
 
-        jdbc.update(
+        recursiveInsert(
                 "INSERT INTO produto (nome, valor_produto, id_marca_produto) "
                 + "WITH RECURSIVE seq AS ("
                 + "  SELECT 1 AS n "
@@ -253,7 +258,7 @@ class SearchIndexesMySqlIT {
 
     private void seedPedidos() {
         // Reusa o funcionario seedado; clientes/mesas/comandas BUSCA02_.
-        jdbc.update(
+        recursiveInsert(
                 "INSERT INTO pedido (id_comanda, id_mesa, id_cliente, id_funcionario, "
                 + "valor_total, status, data_criacao, data_edicao) "
                 + "WITH RECURSIVE seq AS ("
