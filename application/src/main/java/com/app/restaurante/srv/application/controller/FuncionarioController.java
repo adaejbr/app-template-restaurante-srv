@@ -10,12 +10,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -56,5 +59,19 @@ public class FuncionarioController {
             @PathVariable Integer id,
             @Valid @RequestBody FuncionarioUpdateRequest request) {
         return funcionarioService.atualizar(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Desativar funcionário (exclusão lógica)",
+            description = "Altera o status do funcionário para INATIVO, preservando o registro no banco "
+                    + "e bloqueando novos logins.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Funcionário desativado com sucesso"),
+        @ApiResponse(responseCode = "401", description = "Não autenticado"),
+        @ApiResponse(responseCode = "404", description = "Funcionário não encontrado")
+    })
+    public void desativar(@PathVariable Integer id) {
+        funcionarioService.desativar(id);
     }
 }
