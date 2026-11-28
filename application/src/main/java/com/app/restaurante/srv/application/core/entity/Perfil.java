@@ -11,6 +11,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +19,8 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "perfil",
-    indexes = @Index(name = "idx_perfil_nome", columnList = "nome"))
+    indexes = @Index(name = "idx_perfil_nome", columnList = "nome"),
+    uniqueConstraints = @UniqueConstraint(name = "uq_perfil_cpf", columnNames = "cpf"))
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -32,7 +34,7 @@ public class Perfil {
     @Column(nullable = false, length = 150)
     private String nome;
 
-    @Column(nullable = false, unique = true, length = 14)
+    @Column(nullable = false, length = 14)
     private String cpf;
 
     @Column(length = 20)

@@ -7,7 +7,11 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Registro minimo de auditoria para metodos anotados com {@link Auditable}.
@@ -25,7 +29,20 @@ public class AuditAspect {
         String acao = auditable.acao().isBlank()
                 ? joinPoint.getSignature().toShortString()
                 : auditable.acao();
-        LOG.info("auditoria acao={} entidadeId={}", acao, extrairId(resultado));
+        Object id = extrairId(resultado);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String autor = authentication == null ? null : authentication.getName();
+        if (TransactionSynchronizationManager.isActualTransactionActive()
+                && TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    LOG.info("auditoria acao={} entidadeId={} autor={}", acao, id, autor);
+                }
+            });
+        } else {
+            LOG.info("auditoria acao={} entidadeId={} autor={}", acao, id, autor);
+        }
         return resultado;
     }
 

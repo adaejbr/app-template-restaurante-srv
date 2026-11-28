@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.AllArgsConstructor;
@@ -23,7 +24,8 @@ import lombok.ToString;
 
 @Entity
 @Table(name = "funcionario",
-    indexes = @Index(name = "idx_funcionario_status", columnList = "status"))
+    indexes = @Index(name = "idx_funcionario_status", columnList = "status"),
+    uniqueConstraints = @UniqueConstraint(name = "uq_funcionario_login", columnNames = "login"))
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -39,10 +41,11 @@ public class Funcionario {
         foreignKey = @ForeignKey(name = "fk_funcionario_perfil"))
     private Perfil perfil;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = false, length = 50)
     private String login;
 
     @Column(nullable = false, length = 255)
+    @ToString.Exclude
     private String senha;
 
     @Column(nullable = false, length = 30)
